@@ -39,18 +39,20 @@
     gap: 5px;
   }
 
-  /* トグル */
+  /* トグル — テンキー左に縦並び */
   #view-toggle {
-    display: flex; gap: 8px;
-    justify-content: center;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
     flex-shrink: 0;
   }
   .toggle-btn {
-    padding: 4px 18px; border-radius: 20px;
+    padding: 7px 14px; border-radius: 20px;
     border: 2px solid var(--border); background: white;
-    font-size: 14px; font-weight: bold; color: var(--sub);
+    font-size: 13px; font-weight: bold; color: var(--sub);
     cursor: pointer; font-family: inherit;
     -webkit-tap-highlight-color: transparent;
+    white-space: nowrap;
   }
   .toggle-btn.active { background: var(--accent); border-color: var(--accent); color: white; }
 
@@ -129,7 +131,7 @@
     -webkit-tap-highlight-color: transparent;
   }
   .num-btn:active { background: #fff0cc; transform: scale(0.91); }
-  .num-btn.del { font-size: 14px; color: var(--sub); }
+  .num-btn.del { font-size: 17px; color: var(--sub); }
   .num-btn.enter {
     background: var(--accent); color: white;
     border-color: var(--accent); font-size: 13px;
@@ -242,14 +244,14 @@
 
 <!-- ===== MAIN ===== -->
 <div id="main-screen" class="screen active">
-  <div id="view-toggle">
-    <button class="toggle-btn active" id="btn-scatter" onclick="setView('scattered')">バラバラ</button>
-    <button class="toggle-btn"        id="btn-align"   onclick="setView('aligned')">せいれつ</button>
-  </div>
 
   <div id="coins-area" class="scattered"></div>
 
   <div id="bottom-area">
+    <div id="view-toggle">
+      <button class="toggle-btn active" id="btn-scatter" onclick="setView('scattered')">バラバラ</button>
+      <button class="toggle-btn"        id="btn-align"   onclick="setView('aligned')">せいれつ</button>
+    </div>
     <div id="numpad">
       <button class="num-btn" onclick="numInput('7')">7</button>
       <button class="num-btn" onclick="numInput('8')">8</button>
@@ -328,12 +330,12 @@ let viewMode = 'scattered';
 */
 function coinSVG(val, size) {
   const C = {
-    1:   { bg:'#b2b2b2', inner:'#d0d0d0', rim:'#888',    text:'1',   hole:false },
-    5:   { bg:'#c8a84b', inner:'#e0c060', rim:'#a07830', text:'5',   hole:true  },
-    10:  { bg:'#b87333', inner:'#d4946a', rim:'#8a4820', text:'10',  hole:false },
-    50:  { bg:'#b0b0b0', inner:'#d0d0d0', rim:'#808080', text:'50',  hole:true  },
-    100: { bg:'#a8a8a8', inner:'#c8c8c8', rim:'#686868', text:'100', hole:false },
-    500: { bg:'#a0a8b0', inner:'#c0c8d0', rim:'#7080a0', text:'500', hole:false },
+    1:   { bg:'#b2b2b2', inner:'#d0d0d0', rim:'#444444', text:'1',   hole:false },
+    5:   { bg:'#c8a84b', inner:'#e0c060', rim:'#5a3a00', text:'5',   hole:true  },
+    10:  { bg:'#b87333', inner:'#d4946a', rim:'#4a1800', text:'10',  hole:false },
+    50:  { bg:'#b0b0b0', inner:'#d0d0d0', rim:'#333333', text:'50',  hole:true  },
+    100: { bg:'#a8a8a8', inner:'#c8c8c8', rim:'#2a2a2a', text:'100', hole:false },
+    500: { bg:'#a0a8b0', inner:'#c0c8d0', rim:'#1a3060', text:'500', hole:false },
   };
   const c = C[val];
   const r = size / 2;
@@ -613,7 +615,9 @@ function buildSettingsUI() {
 function changeRange(val, which, delta) {
   const r = ranges[val];
   if (which === 'min') {
-    r.min = Math.max(0, Math.min(r.max, r.min + delta));
+    r.min = Math.max(0, Math.min(10, r.min + delta));
+    // 最小が最大を超えたら最大も一緒に動かす
+    if (r.min > r.max) r.max = r.min;
   } else {
     r.max = Math.max(r.min, Math.min(10, r.max + delta));
   }
