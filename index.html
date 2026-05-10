@@ -1,0 +1,537 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>お金を数えよう</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
+    <style>
+        body {
+            font-family: 'Hiragino Maru Gothic ProN', 'Rounded M+ 1c', 'Quicksand', sans-serif;
+            background-color: #f0fdf4; /* 薄い緑色の背景 */
+            touch-action: manipulation; /* ダブルタップズーム防止 */
+        }
+
+        /* --- お金の基本スタイル --- */
+        .money {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-weight: 900;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1), inset 0 -2px 4px rgba(0,0,0,0.1);
+            user-select: none;
+            transition: transform 0.2s;
+        }
+
+        /* 整列モード時のホバーエフェクト（iPadでは長押しなどに相当） */
+        .mode-align .money:active {
+            transform: scale(1.1);
+        }
+
+        /* --- 硬貨のスタイル --- */
+        .coin {
+            border-radius: 50%;
+            text-shadow: 1px 1px 0px rgba(255,255,255,0.7);
+        }
+        
+        .coin-1 {
+            width: 40px; height: 40px;
+            background-color: #e2e8f0; border: 2px solid #cbd5e1; color: #475569; font-size: 1.2rem;
+        }
+        .coin-5 {
+            width: 48px; height: 48px;
+            /* 穴の表現と背景色 */
+            background: radial-gradient(circle at center, transparent 15%, #fef08a 16%);
+            border: 2px solid #ca8a04; color: #854d0e; font-size: 1.5rem;
+        }
+        .coin-10 {
+            width: 52px; height: 52px;
+            background-color: #d97757; border: 2px solid #9a3412; color: #431407; font-size: 1.5rem;
+            text-shadow: 1px 1px 0px rgba(255,255,255,0.3);
+        }
+        .coin-50 {
+            width: 48px; height: 48px;
+            /* 穴の表現と背景色 */
+            background: radial-gradient(circle at center, transparent 15%, #e2e8f0 16%);
+            border: 2px solid #94a3b8; color: #334155; font-size: 1.5rem;
+        }
+        .coin-100 {
+            width: 54px; height: 54px;
+            background-color: #f1f5f9; border: 2px solid #94a3b8; color: #334155; font-size: 1.6rem;
+        }
+        .coin-500 {
+            width: 62px; height: 62px;
+            background-color: #fef08a; border: 2px solid #ca8a04; color: #854d0e; font-size: 1.8rem;
+        }
+
+        /* --- 紙幣のスタイル --- */
+        .bill {
+            border-radius: 4px;
+            text-shadow: 1px 1px 0px rgba(255,255,255,0.8);
+            border: 1px solid rgba(0,0,0,0.1);
+        }
+        .bill-1000 {
+            width: 140px; height: 70px;
+            background-color: #e0f2fe; /* 薄い青 */
+            background-image: 
+                radial-gradient(circle at 50% 50%, #bae6fd 30%, transparent 70%),
+                linear-gradient(45deg, transparent 40%, #f0f9ff 40%, #f0f9ff 60%, transparent 60%);
+            color: #0369a1; font-size: 1.8rem; letter-spacing: 0.1em;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        /* --- 表示エリアのモード切替 --- */
+        #money-container {
+            /* 基本は相対配置コンテナ */
+            position: relative;
+        }
+        /* 整列モードのスタイル */
+        #money-container.mode-align {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            align-content: flex-start;
+            gap: 15px;
+            padding: 20px;
+        }
+        #money-container.mode-align .money {
+            position: relative !important;
+            left: auto !important;
+            top: auto !important;
+            transform: none !important;
+        }
+
+        /* モーダルのアニメーション */
+        .modal-enter { opacity: 0; transform: scale(0.9); }
+        .modal-enter-active { opacity: 1; transform: scale(1); transition: all 0.2s ease-out; }
+
+        /* カスタムスクロールバー（設定画面用） */
+        .custom-scrollbar::-webkit-scrollbar { width: 8px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        
+        /* 隠し設定ボタン */
+        #settings-trigger {
+            opacity: 0.15;
+            transition: opacity 0.3s;
+        }
+        #settings-trigger:active {
+            opacity: 0.8;
+        }
+
+        /* --- フィードバックアニメーション --- */
+        @keyframes popupAndFade {
+            0% { transform: scale(0.5); opacity: 0; }
+            20% { transform: scale(1.2); opacity: 1; }
+            40% { transform: scale(1); opacity: 1; }
+            80% { transform: scale(1); opacity: 1; }
+            100% { transform: scale(1.5); opacity: 0; }
+        }
+        .anim-correct {
+            animation: popupAndFade 2s forwards;
+        }
+    </style>
+</head>
+<body class="h-screen w-screen overflow-hidden flex flex-col items-center">
+
+    <!-- ヘッダーと操作パネル -->
+    <header class="w-full max-w-4xl px-4 py-3 flex justify-between items-center bg-white shadow-sm z-10">
+        <h1 class="text-xl md:text-2xl font-bold text-green-700">いくらあるかな？</h1>
+        
+        <!-- 表示モード切り替えスイッチ -->
+        <div class="flex bg-gray-100 rounded-lg p-1 border border-gray-200">
+            <button id="btn-scatter" class="px-3 py-1.5 md:px-4 md:py-2 text-sm md:text-base rounded-md bg-white shadow font-bold text-green-600 transition-colors" onclick="setDisplayMode('scatter')">バラバラ</button>
+            <button id="btn-align" class="px-3 py-1.5 md:px-4 md:py-2 text-sm md:text-base rounded-md text-gray-500 font-bold hover:text-gray-700 transition-colors" onclick="setDisplayMode('align')">整列</button>
+        </div>
+    </header>
+
+    <!-- お金表示エリア -->
+    <main class="w-full max-w-4xl flex-grow px-4 pt-4 pb-2 flex flex-col min-h-0 relative">
+        <div id="money-container" class="flex-grow w-full bg-white rounded-2xl border-4 border-green-200 shadow-inner overflow-hidden mode-scatter">
+            <!-- ここにJavaScriptでお金が配置されます -->
+        </div>
+
+        <!-- 解答エリア -->
+        <div class="mt-2 bg-white rounded-xl p-2 shadow border-2 border-green-100 flex flex-row items-center justify-center gap-4 flex-shrink-0 relative z-30">
+            <div class="flex items-center gap-1">
+                <input type="number" id="answer-input" inputmode="numeric" pattern="[0-9]*" placeholder="0" 
+                    class="w-24 md:w-32 text-right text-xl md:text-2xl font-bold p-1 border-b-2 border-gray-300 focus:border-green-500 focus:outline-none transition-colors">
+                <span class="text-lg md:text-xl font-bold text-gray-700">円</span>
+            </div>
+
+            <div class="flex gap-2">
+                <button onclick="checkAnswer()" class="whitespace-nowrap bg-lime-400 hover:bg-lime-500 text-gray-800 font-bold py-2 px-4 rounded-lg shadow-[0_3px_0_#65a30d] active:shadow-none active:translate-y-1 transition-all text-sm md:text-base">
+                    たしかめる
+                </button>
+                <button onclick="generateProblem()" class="whitespace-nowrap bg-blue-400 hover:bg-blue-500 text-white font-bold py-2 px-4 rounded-lg shadow-[0_3px_0_#1d4ed8] active:shadow-none active:translate-y-1 transition-all text-sm md:text-base">
+                    つぎのもんだい
+                </button>
+            </div>
+            <!-- エラー時のメッセージ -->
+            <div id="feedback-small" class="absolute -top-6 left-1/2 transform -translate-x-1/2 text-sm md:text-base font-bold text-blue-600 whitespace-nowrap drop-shadow-md"></div>
+        </div>
+    </main>
+
+    <!-- フィードバック用オーバーレイ（大正解用） -->
+    <div id="feedback-overlay" class="fixed inset-0 flex justify-center items-center pointer-events-none z-40">
+        <div id="feedback-text" class="text-5xl md:text-8xl font-black text-red-500 opacity-0 drop-shadow-[0_4px_4px_rgba(255,255,255,1)]" style="-webkit-text-stroke: 3px white;"></div>
+    </div>
+
+    <!-- 隠し設定ボタン (画面右下) -->
+    <div class="fixed bottom-4 right-4 z-50">
+        <button id="settings-trigger" onclick="openSettings()" class="p-2 bg-white/50 rounded-full shadow-sm">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-gray-800">
+                <circle cx="12" cy="12" r="3"></circle>
+                <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+            </svg>
+        </button>
+    </div>
+
+    <!-- 設定モーダル -->
+    <div id="settings-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden justify-center items-center z-50 p-4">
+        <div class="bg-white rounded-2xl w-full max-w-md max-h-[90vh] flex flex-col shadow-2xl modal-enter" id="modal-content">
+            <div class="p-4 border-b text-center font-bold text-lg">設定（出現する枚数の範囲）</div>
+            
+            <div class="p-4 overflow-y-auto custom-scrollbar flex-grow" id="settings-list">
+                <!-- JSで設定項目を生成 -->
+            </div>
+
+            <div class="p-4 border-t bg-gray-50 rounded-b-2xl flex justify-center">
+                <button onclick="saveSettings()" class="w-full bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-4 rounded-xl shadow-[0_4px_0_#15803d] active:shadow-none active:translate-y-1 transition-all">
+                    保存して閉じる
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 金種の設定定義
+        const moneyTypes = [
+            { value: 1000, type: 'bill', class: 'bill-1000' },
+            { value: 500, type: 'coin', class: 'coin-500' },
+            { value: 100, type: 'coin', class: 'coin-100' },
+            { value: 50, type: 'coin', class: 'coin-50' },
+            { value: 10, type: 'coin', class: 'coin-10' },
+            { value: 5, type: 'coin', class: 'coin-5' },
+            { value: 1, type: 'coin', class: 'coin-1' }
+        ];
+
+        // デフォルトの出現枚数設定
+        let settings = {
+            1000: { min: 0, max: 0 },
+            500:  { min: 1, max: 1 },
+            100:  { min: 3, max: 3 },
+            50:   { min: 2, max: 2 },
+            10:   { min: 4, max: 4 },
+            5:    { min: 0, max: 0 },
+            1:    { min: 0, max: 0 }
+        };
+
+        let currentTotal = 0;
+        let currentMoneyElements = [];
+        let displayMode = 'scatter'; // 'scatter' または 'align'
+
+        const container = document.getElementById('money-container');
+        let inputEl;
+        let feedbackTextEl;
+        let feedbackSmallEl;
+        
+        // --- 音響設定 (Tone.js) ---
+        const correctSynth = new Tone.PolySynth(Tone.Synth).toDestination();
+        const wrongSynth = new Tone.Synth().toDestination();
+
+        function playCorrectSound() {
+            Tone.start();
+            const now = Tone.now();
+            // ピン・ポーン
+            correctSynth.triggerAttackRelease("B5", "8n", now);
+            correctSynth.triggerAttackRelease("E6", "2n", now + 0.2);
+        }
+
+        function playWrongSound() {
+            Tone.start();
+            const now = Tone.now();
+            // キュゥウン（ピッチダウン）
+            wrongSynth.triggerAttackRelease("E4", "8n", now);
+            wrongSynth.frequency.exponentialRampTo("E2", 0.6, now);
+        }
+
+        // --- 初期化 ---
+        function init() {
+            inputEl = document.getElementById('answer-input');
+            feedbackTextEl = document.getElementById('feedback-text');
+            feedbackSmallEl = document.getElementById('feedback-small');
+
+            generateSettingsUI();
+            generateProblem();
+            
+            // ウィンドウサイズが変わったら再配置する（バラバラモードのみ）
+            window.addEventListener('resize', () => {
+                if (displayMode === 'scatter' && currentMoneyElements.length > 0) {
+                    // 少し遅延させてサイズ確定後に再配置
+                    clearTimeout(window.resizeTimer);
+                    window.resizeTimer = setTimeout(() => {
+                        renderMoney();
+                    }, 200);
+                }
+            });
+        }
+
+        // --- 表示モードの切り替え ---
+        function setDisplayMode(mode) {
+            displayMode = mode;
+            
+            const btnScatter = document.getElementById('btn-scatter');
+            const btnAlign = document.getElementById('btn-align');
+            
+            if (mode === 'scatter') {
+                btnScatter.className = "px-3 py-1.5 md:px-4 md:py-2 text-sm md:text-base rounded-md bg-white shadow font-bold text-green-600 transition-colors";
+                btnAlign.className = "px-3 py-1.5 md:px-4 md:py-2 text-sm md:text-base rounded-md text-gray-500 font-bold hover:text-gray-700 transition-colors";
+                container.classList.remove('mode-align');
+            } else {
+                btnAlign.className = "px-3 py-1.5 md:px-4 md:py-2 text-sm md:text-base rounded-md bg-white shadow font-bold text-green-600 transition-colors";
+                btnScatter.className = "px-3 py-1.5 md:px-4 md:py-2 text-sm md:text-base rounded-md text-gray-500 font-bold hover:text-gray-700 transition-colors";
+                container.classList.add('mode-align');
+            }
+            
+            // 現在の要素を再配置
+            renderMoney();
+        }
+
+        // --- 問題作成 ---
+        function generateProblem() {
+            currentTotal = 0;
+            currentMoneyElements = [];
+            
+            // フィードバックの初期化
+            feedbackTextEl.innerText = '';
+            feedbackTextEl.classList.remove('anim-correct');
+            feedbackSmallEl.innerText = '';
+            
+            inputEl.value = '';
+            inputEl.focus();
+
+            // 設定に基づいてお金の要素を生成
+            moneyTypes.forEach(mt => {
+                const count = getRandomInt(settings[mt.value].min, settings[mt.value].max);
+                for (let i = 0; i < count; i++) {
+                    currentTotal += mt.value;
+                    
+                    const el = document.createElement('div');
+                    el.className = `money ${mt.type} ${mt.class}`;
+                    el.innerText = mt.value;
+                    el.dataset.value = mt.value;
+                    
+                    currentMoneyElements.push(el);
+                }
+            });
+
+            // 金額が大きい順にソートしておく（整列時に綺麗になるように）
+            currentMoneyElements.sort((a, b) => parseInt(b.dataset.value) - parseInt(a.dataset.value));
+
+            renderMoney();
+        }
+
+        // --- お金の描画・配置 ---
+        function renderMoney() {
+            container.innerHTML = '';
+            
+            if (currentMoneyElements.length === 0) return;
+
+            if (displayMode === 'align') {
+                // 整列モード：CSSのFlexboxに任せるので、要素を追加するだけ
+                currentMoneyElements.forEach(el => {
+                    container.appendChild(el);
+                });
+            } else {
+                // バラバラモード：重ならないように計算して配置
+                layoutScatter(currentMoneyElements);
+            }
+        }
+
+        // --- 重ならないランダム配置アルゴリズム ---
+        function layoutScatter(elements) {
+            const containerRect = container.getBoundingClientRect();
+            // コンテナがまだ表示されていない・サイズがない場合は中断
+            if (containerRect.width === 0 || containerRect.height === 0) return;
+
+            const placedRects = [];
+            const padding = 5; // アイテム同士の隙間
+
+            elements.forEach(el => {
+                // 一旦非表示で追加してサイズを取得
+                el.style.visibility = 'hidden';
+                el.style.position = 'absolute';
+                container.appendChild(el);
+                
+                const w = el.offsetWidth;
+                const h = el.offsetHeight;
+                
+                let x = 0, y = 0;
+                let isOverlapping = true;
+                let attempts = 0;
+                const maxAttempts = 150; // 最大試行回数（画面が狭いと重なってしまうため制限）
+
+                while (isOverlapping && attempts < maxAttempts) {
+                    // 配置可能な範囲でランダムな座標を生成
+                    x = Math.random() * Math.max(0, containerRect.width - w - padding * 2) + padding;
+                    y = Math.random() * Math.max(0, containerRect.height - h - padding * 2) + padding;
+                    
+                    const currentRect = {
+                        left: x,
+                        right: x + w,
+                        top: y,
+                        bottom: y + h
+                    };
+
+                    // 既存の要素と重なっているかチェック（AABB衝突判定）
+                    isOverlapping = placedRects.some(rect => {
+                        return !(
+                            currentRect.right + padding < rect.left ||
+                            currentRect.left - padding > rect.right ||
+                            currentRect.bottom + padding < rect.top ||
+                            currentRect.top - padding > rect.bottom
+                        );
+                    });
+
+                    attempts++;
+                }
+
+                // 角度をランダムに設定
+                let angle = 0;
+                if (el.classList.contains('bill')) {
+                    // 紙幣は少しだけ傾ける
+                    angle = (Math.random() - 0.5) * 30; 
+                } else {
+                    // 硬貨は自由に回転
+                    angle = Math.random() * 360;
+                }
+
+                // スタイルを適用して表示
+                el.style.left = `${x}px`;
+                el.style.top = `${y}px`;
+                el.style.transform = `rotate(${angle}deg)`;
+                el.style.visibility = 'visible';
+
+                // 配置済みリストに追加
+                placedRects.push({ left: x, right: x + w, top: y, bottom: y + h });
+            });
+        }
+
+        // --- 答え合わせ ---
+        function checkAnswer() {
+            // アニメーション再トリガーのために一度クラスを外してリフロー
+            feedbackTextEl.classList.remove('anim-correct');
+            void feedbackTextEl.offsetWidth; 
+
+            const userAnswer = parseInt(inputEl.value, 10);
+            
+            if (isNaN(userAnswer)) {
+                feedbackSmallEl.innerText = 'すうじをいれてね！';
+                feedbackSmallEl.className = 'absolute -top-6 left-1/2 transform -translate-x-1/2 text-sm md:text-base font-bold text-orange-500 whitespace-nowrap drop-shadow-md';
+                return;
+            }
+
+            if (userAnswer === currentTotal) {
+                // 正解
+                feedbackSmallEl.innerText = '';
+                feedbackTextEl.innerText = '大正解！🎉';
+                feedbackTextEl.classList.add('anim-correct');
+                playCorrectSound();
+            } else {
+                // 不正解
+                feedbackSmallEl.innerText = 'おしい！もういちどかんがえてみよう！';
+                feedbackSmallEl.className = 'absolute -top-6 left-1/2 transform -translate-x-1/2 text-sm md:text-base font-bold text-blue-600 whitespace-nowrap drop-shadow-md';
+                playWrongSound();
+            }
+        }
+
+        // --- ユーティリティ ---
+        function getRandomInt(min, max) {
+            return Math.floor(Math.random() * (max - min + 1)) + min;
+        }
+
+        // ==========================================
+        // 設定画面関連の処理
+        // ==========================================
+        
+        function generateSettingsUI() {
+            const listEl = document.getElementById('settings-list');
+            listEl.innerHTML = '';
+
+            moneyTypes.forEach(mt => {
+                const item = document.createElement('div');
+                item.className = 'flex items-center justify-between mb-4 bg-white p-3 rounded-xl border';
+                
+                // アイコン表示
+                const iconClass = mt.type === 'bill' ? 'w-16 h-8 text-sm' : 'w-10 h-10 text-sm';
+                item.innerHTML = `
+                    <div class="flex items-center gap-3 w-24">
+                        <div class="money ${mt.type} ${mt.class} ${iconClass} flex-shrink-0" style="position:static; transform:none; box-shadow:none; border-width:1px;">${mt.value}</div>
+                    </div>
+                    <div class="flex items-center gap-2 flex-grow justify-end">
+                        <div class="flex flex-col items-center">
+                            <label class="text-xs text-gray-500 mb-1">最小</label>
+                            <input type="number" id="min-${mt.value}" value="${settings[mt.value].min}" min="0" max="20" class="w-16 p-2 border rounded text-center text-lg">
+                        </div>
+                        <span class="text-gray-400">〜</span>
+                        <div class="flex flex-col items-center">
+                            <label class="text-xs text-gray-500 mb-1">最大</label>
+                            <input type="number" id="max-${mt.value}" value="${settings[mt.value].max}" min="0" max="20" class="w-16 p-2 border rounded text-center text-lg">
+                        </div>
+                        <span class="ml-1">枚</span>
+                    </div>
+                `;
+                listEl.appendChild(item);
+
+                // 最小値と最大値の整合性チェックイベント
+                const minInput = item.querySelector(`#min-${mt.value}`);
+                const maxInput = item.querySelector(`#max-${mt.value}`);
+                
+                minInput.addEventListener('change', () => {
+                    if (parseInt(minInput.value) > parseInt(maxInput.value)) {
+                        maxInput.value = minInput.value;
+                    }
+                });
+                maxInput.addEventListener('change', () => {
+                    if (parseInt(maxInput.value) < parseInt(minInput.value)) {
+                        minInput.value = maxInput.value;
+                    }
+                });
+            });
+        }
+
+        function openSettings() {
+            generateSettingsUI(); // 開くたびにUIを最新状態に
+            const modal = document.getElementById('settings-modal');
+            const content = document.getElementById('modal-content');
+            
+            modal.style.display = 'flex';
+            // アニメーション用クラスのリセットと付与
+            content.classList.remove('modal-enter-active');
+            void content.offsetWidth; // リフロー強制
+            content.classList.add('modal-enter-active');
+        }
+
+        function saveSettings() {
+            moneyTypes.forEach(mt => {
+                const minVal = parseInt(document.getElementById(`min-${mt.value}`).value, 10) || 0;
+                const maxVal = parseInt(document.getElementById(`max-${mt.value}`).value, 10) || 0;
+                settings[mt.value].min = minVal;
+                settings[mt.value].max = Math.max(minVal, maxVal); // 念のため最小値以上を保証
+            });
+
+            const modal = document.getElementById('settings-modal');
+            modal.style.display = 'none';
+
+            // 設定保存後に新しい問題を生成
+            generateProblem();
+        }
+
+        // 起動
+        init();
+
+    </script>
+</body>
+</html>
