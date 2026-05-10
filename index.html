@@ -7,116 +7,166 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
     <style>
+        * { box-sizing: border-box; }
         body {
-            font-family: 'Hiragino Maru Gothic ProN', 'Rounded M+ 1c', 'Quicksand', sans-serif;
+            font-family: 'Hiragino Maru Gothic ProN', 'Rounded M+ 1c', sans-serif;
             background-color: #f0fdf4;
             touch-action: manipulation;
-            height: 100vh;
             margin: 0;
-            overflow: hidden; /* 全体のはみ出しを防止 */
+            padding: 0;
+            height: 100vh;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
         }
 
-        /* --- お金の基本スタイル --- */
         .money {
             display: flex;
             justify-content: center;
             align-items: center;
             font-weight: 900;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1), inset 0 -2px 4px rgba(0,0,0,0.1);
+            box-shadow: 0 3px 5px rgba(0,0,0,0.1), inset 0 -2px 3px rgba(0,0,0,0.1);
             user-select: none;
-            transition: transform 0.2s;
+            flex-shrink: 0;
         }
 
-        /* --- 硬貨のスタイル --- */
-        .coin { border-radius: 50%; }
-        .coin-1 { width: 40px; height: 40px; background-color: #e2e8f0; border: 2px solid #cbd5e1; color: #475569; font-size: 1.2rem; }
-        .coin-5 { width: 48px; height: 48px; background: radial-gradient(circle at center, transparent 15%, #fef08a 16%); border: 2px solid #ca8a04; color: #854d0e; font-size: 1.5rem; }
-        .coin-10 { width: 52px; height: 52px; background-color: #d97757; border: 2px solid #9a3412; color: #431407; font-size: 1.5rem; }
-        .coin-50 { width: 48px; height: 48px; background: radial-gradient(circle at center, transparent 15%, #e2e8f0 16%); border: 2px solid #94a3b8; color: #334155; font-size: 1.5rem; }
-        .coin-100 { width: 54px; height: 54px; background-color: #f1f5f9; border: 2px solid #94a3b8; color: #334155; font-size: 1.6rem; }
-        .coin-500 { width: 62px; height: 62px; background-color: #fef08a; border: 2px solid #ca8a04; color: #854d0e; font-size: 1.8rem; }
+        .coin { border-radius: 50%; text-shadow: 1px 1px 0 rgba(255,255,255,0.7); }
+        .coin-1   { width:36px;height:36px;background-color:#e2e8f0;border:2px solid #cbd5e1;color:#475569;font-size:1rem; }
+        .coin-5   { width:44px;height:44px;background:radial-gradient(circle at center,transparent 15%,#fef08a 16%);border:2px solid #ca8a04;color:#854d0e;font-size:1.3rem; }
+        .coin-10  { width:48px;height:48px;background-color:#d97757;border:2px solid #9a3412;color:#431407;font-size:1.3rem;text-shadow:1px 1px 0 rgba(255,255,255,0.3); }
+        .coin-50  { width:44px;height:44px;background:radial-gradient(circle at center,transparent 15%,#e2e8f0 16%);border:2px solid #94a3b8;color:#334155;font-size:1.3rem; }
+        .coin-100 { width:50px;height:50px;background-color:#f1f5f9;border:2px solid #94a3b8;color:#334155;font-size:1.4rem; }
+        .coin-500 { width:58px;height:58px;background-color:#fef08a;border:2px solid #ca8a04;color:#854d0e;font-size:1.6rem; }
 
-        /* --- 紙幣のスタイル --- */
-        .bill { border-radius: 4px; border: 1px solid rgba(0,0,0,0.1); }
-        .bill-1000 { width: 130px; height: 65px; background-color: #e0f2fe; color: #0369a1; font-size: 1.7rem; letter-spacing: 0.1em; }
+        .bill { border-radius:4px;text-shadow:1px 1px 0 rgba(255,255,255,0.8);border:1px solid rgba(0,0,0,0.1); }
+        .bill-1000 {
+            width:130px;height:65px;
+            background-color:#e0f2fe;
+            background-image:radial-gradient(circle at 50% 50%,#bae6fd 30%,transparent 70%),
+                linear-gradient(45deg,transparent 40%,#f0f9ff 40%,#f0f9ff 60%,transparent 60%);
+            color:#0369a1;font-size:1.6rem;letter-spacing:0.1em;
+            box-shadow:0 2px 4px rgba(0,0,0,0.1);
+        }
 
-        /* --- レイアウト調整 --- */
-        #money-container { position: relative; }
-        #money-container.mode-align { display: flex; flex-wrap: wrap; justify-content: center; align-content: flex-start; gap: 10px; padding: 15px; }
-        #money-container.mode-align .money { position: relative !important; left: auto !important; top: auto !important; transform: none !important; }
+        #money-container {
+            position: relative;
+            flex: 1 1 0;
+            min-height: 0;
+        }
+        #money-container.mode-align {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            align-content: flex-start;
+            gap: 10px;
+            padding: 12px;
+            overflow-y: auto;
+        }
+        #money-container.mode-align .money {
+            position: relative !important;
+            left: auto !important;
+            top: auto !important;
+            transform: none !important;
+        }
 
-        /* --- フィードバックアニメーション --- */
+        #answer-area {
+            flex-shrink: 0;
+            background: white;
+            border-top: 2px solid #dcfce7;
+            padding: 6px 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            position: relative;
+        }
+
         @keyframes popupAndFade {
-            0% { transform: scale(0.5); opacity: 0; }
-            20% { transform: scale(1.1); opacity: 1; }
-            80% { transform: scale(1.1); opacity: 1; }
-            100% { transform: scale(1.3); opacity: 0; }
+            0%   { transform: scale(0.5); opacity:0; }
+            20%  { transform: scale(1.2); opacity:1; }
+            40%  { transform: scale(1);   opacity:1; }
+            80%  { transform: scale(1);   opacity:1; }
+            100% { transform: scale(1.5); opacity:0; }
         }
-        .anim-correct { animation: popupAndFade 2s forwards; }
+        .anim-correct { animation: popupAndFade 1.4s forwards; }
 
-        /* 設定トリガー */
-        #settings-trigger { opacity: 0.1; }
-        #settings-trigger:active { opacity: 0.5; }
+        #settings-trigger {
+            opacity: 0.15;
+            transition: opacity 0.3s;
+            position: fixed;
+            bottom: 12px;
+            right: 12px;
+            z-index: 50;
+        }
+        #settings-trigger:active { opacity: 0.8; }
 
-        /* 入力欄の調整 */
-        input[type="number"]::-webkit-inner-spin-button, 
-        input[type="number"]::-webkit-outer-spin-button { opacity: 1; }
+        .modal-bg {
+            position: fixed; inset: 0;
+            background: rgba(0,0,0,0.5);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+            padding: 16px;
+        }
+        .modal-box {
+            background: white;
+            border-radius: 16px;
+            width: 100%;
+            max-width: 420px;
+            max-height: 85vh;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
     </style>
 </head>
-<body class="flex flex-col items-center">
+<body>
 
-    <header class="w-full max-w-4xl px-4 py-2 flex justify-between items-center bg-white shadow-sm z-30">
-        <h1 class="text-lg md:text-xl font-bold text-green-700">いくらあるかな？</h1>
-        <div class="flex bg-gray-100 rounded-lg p-1 border border-gray-200">
-            <button id="btn-scatter" class="px-3 py-1 text-xs md:text-sm rounded-md bg-white shadow font-bold text-green-600" onclick="setDisplayMode('scatter')">バラバラ</button>
-            <button id="btn-align" class="px-3 py-1 text-xs md:text-sm rounded-md text-gray-500 font-bold" onclick="setDisplayMode('align')">整列</button>
+    <header style="flex-shrink:0;background:white;box-shadow:0 1px 3px rgba(0,0,0,0.1);padding:6px 12px;display:flex;justify-content:space-between;align-items:center;z-index:10;">
+        <h1 style="margin:0;font-size:1.1rem;font-weight:700;color:#15803d;">いくらあるかな？</h1>
+        <div style="display:flex;background:#f3f4f6;border-radius:8px;padding:3px;border:1px solid #e5e7eb;gap:2px;">
+            <button id="btn-scatter" onclick="setDisplayMode('scatter')" style="padding:4px 10px;border-radius:6px;font-weight:700;font-size:0.85rem;border:none;cursor:pointer;background:white;color:#16a34a;box-shadow:0 1px 3px rgba(0,0,0,0.1);">バラバラ</button>
+            <button id="btn-align"   onclick="setDisplayMode('align')"   style="padding:4px 10px;border-radius:6px;font-weight:700;font-size:0.85rem;border:none;cursor:pointer;background:transparent;color:#6b7280;">整列</button>
         </div>
     </header>
 
-    <main class="w-full max-w-4xl flex-grow px-2 py-2 flex flex-col min-h-0 relative">
-        <div id="money-container" class="flex-grow w-full bg-white rounded-xl border-2 border-green-100 shadow-inner overflow-hidden">
-            <!-- JSで配置 -->
+    <div style="flex:1 1 0;min-height:0;padding:8px 10px 0;display:flex;flex-direction:column;">
+        <div id="money-container" style="background:white;border-radius:14px;border:3px solid #bbf7d0;box-shadow:inset 0 2px 6px rgba(0,0,0,0.05);">
         </div>
-
-        <!-- 解答エリア: iPadでタップしやすいようz-indexを高く設定 -->
-        <div class="mt-2 mb-1 bg-white rounded-xl p-2 shadow border flex flex-row items-center justify-center gap-2 flex-shrink-0 z-50 relative">
-            <div class="flex items-center gap-1">
-                <input type="number" id="answer-input" inputmode="numeric" 
-                    class="w-24 md:w-32 text-right text-xl font-bold p-1 border-b-2 border-green-500 focus:outline-none bg-gray-50 rounded-t" placeholder="0">
-                <span class="text-lg font-bold text-gray-600">円</span>
-            </div>
-
-            <div class="flex gap-2">
-                <button onclick="checkAnswer()" class="whitespace-nowrap bg-lime-400 text-gray-800 font-bold py-2 px-3 rounded-lg shadow-[0_3px_0_#65a30d] active:shadow-none active:translate-y-0.5 text-sm">
-                    たしかめる
-                </button>
-                <button onclick="generateProblem()" class="whitespace-nowrap bg-blue-400 text-white font-bold py-2 px-3 rounded-lg shadow-[0_3px_0_#1d4ed8] active:shadow-none active:translate-y-0.5 text-sm">
-                    つぎのもんだい
-                </button>
-            </div>
-            <!-- 小さなエラー表示用 -->
-            <div id="feedback-small" class="absolute -top-6 left-1/2 transform -translate-x-1/2 text-xs font-bold whitespace-nowrap"></div>
-        </div>
-    </main>
-
-    <!-- フィードバック用オーバーレイ: pointer-events-noneを付与して下の入力を邪魔しないようにする -->
-    <div id="feedback-overlay" class="fixed inset-0 flex justify-center items-center pointer-events-none z-40">
-        <div id="feedback-text" class="text-6xl md:text-8xl font-black text-orange-500 opacity-0 drop-shadow-lg"></div>
     </div>
 
-    <!-- 隠し設定ボタン -->
-    <div class="w-full flex justify-end px-4 pb-2">
-        <button id="settings-trigger" onclick="openSettings()" class="p-2">
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
-        </button>
+    <div id="answer-area">
+        <div id="feedback-small" style="position:absolute;top:-22px;left:50%;transform:translateX(-50%);font-size:0.85rem;font-weight:700;color:#3b82f6;white-space:nowrap;"></div>
+        <div style="display:flex;align-items:center;gap:4px;">
+            <input type="number" id="answer-input" inputmode="numeric" pattern="[0-9]*" placeholder="0"
+                style="width:90px;text-align:right;font-size:1.4rem;font-weight:700;padding:2px 4px;border:none;border-bottom:2px solid #d1d5db;outline:none;background:transparent;">
+            <span style="font-size:1.1rem;font-weight:700;color:#374151;">円</span>
+        </div>
+        <button onclick="checkAnswer()" style="white-space:nowrap;background:#a3e635;color:#374151;font-weight:700;padding:7px 14px;border-radius:8px;border:none;box-shadow:0 3px 0 #65a30d;cursor:pointer;font-size:0.9rem;">たしかめる</button>
+        <button onclick="generateProblem()" style="white-space:nowrap;background:#60a5fa;color:white;font-weight:700;padding:7px 14px;border-radius:8px;border:none;box-shadow:0 3px 0 #1d4ed8;cursor:pointer;font-size:0.9rem;">つぎのもんだい</button>
     </div>
 
-    <div id="settings-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden justify-center items-center z-[100] p-4">
-        <div class="bg-white rounded-2xl w-full max-w-sm flex flex-col shadow-2xl overflow-hidden">
-            <div class="p-3 border-b text-center font-bold">枚数の設定</div>
-            <div class="p-4 overflow-y-auto max-h-[60vh]" id="settings-list"></div>
-            <div class="p-3 border-t bg-gray-50">
-                <button onclick="saveSettings()" class="w-full bg-green-500 text-white font-bold py-3 rounded-xl shadow-md">保存して閉じる</button>
+    <div id="feedback-overlay" style="position:fixed;inset:0;display:flex;justify-content:center;align-items:center;pointer-events:none;z-index:40;">
+        <div id="feedback-text" style="font-size:5rem;font-weight:900;color:#ef4444;opacity:0;-webkit-text-stroke:3px white;text-shadow:0 4px 4px rgba(255,255,255,1);"></div>
+    </div>
+
+    <button id="settings-trigger" onclick="openSettings()" style="background:rgba(255,255,255,0.5);border:none;border-radius:50%;padding:8px;cursor:pointer;">
+        <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="3"></circle>
+            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+        </svg>
+    </button>
+
+    <div id="settings-modal" class="modal-bg">
+        <div class="modal-box">
+            <div style="padding:14px;border-bottom:1px solid #e5e7eb;text-align:center;font-weight:700;font-size:1rem;">設定（出現する枚数の範囲）</div>
+            <div id="settings-list" class="custom-scrollbar" style="padding:12px;overflow-y:auto;flex:1;"></div>
+            <div style="padding:12px;border-top:1px solid #e5e7eb;background:#f9fafb;border-radius:0 0 16px 16px;">
+                <button onclick="saveSettings()" style="width:100%;background:#22c55e;color:white;font-weight:700;padding:10px;border-radius:10px;border:none;box-shadow:0 4px 0 #15803d;cursor:pointer;font-size:1rem;">保存して閉じる</button>
             </div>
         </div>
     </div>
@@ -124,25 +174,29 @@
     <script>
         const moneyTypes = [
             { value: 1000, type: 'bill', class: 'bill-1000' },
-            { value: 500, type: 'coin', class: 'coin-500' },
-            { value: 100, type: 'coin', class: 'coin-100' },
-            { value: 50, type: 'coin', class: 'coin-50' },
-            { value: 10, type: 'coin', class: 'coin-10' },
-            { value: 5, type: 'coin', class: 'coin-5' },
-            { value: 1, type: 'coin', class: 'coin-1' }
+            { value: 500,  type: 'coin', class: 'coin-500' },
+            { value: 100,  type: 'coin', class: 'coin-100' },
+            { value: 50,   type: 'coin', class: 'coin-50' },
+            { value: 10,   type: 'coin', class: 'coin-10' },
+            { value: 5,    type: 'coin', class: 'coin-5' },
+            { value: 1,    type: 'coin', class: 'coin-1' }
         ];
 
         let settings = {
-            1000: { min: 0, max: 0 }, 500: { min: 1, max: 1 }, 100: { min: 3, max: 3 },
-            50: { min: 2, max: 2 }, 10: { min: 4, max: 4 }, 5: { min: 0, max: 0 }, 1: { min: 0, max: 0 }
+            1000: { min: 0, max: 0 },
+            500:  { min: 1, max: 3 },
+            100:  { min: 2, max: 5 },
+            50:   { min: 1, max: 3 },
+            10:   { min: 2, max: 5 },
+            5:    { min: 0, max: 0 },
+            1:    { min: 0, max: 0 }
         };
 
         let currentTotal = 0;
+        let currentMoneyElements = [];
         let displayMode = 'scatter';
+
         const container = document.getElementById('money-container');
-        const inputEl = document.getElementById('answer-input');
-        const feedbackTextEl = document.getElementById('feedback-text');
-        const feedbackSmallEl = document.getElementById('feedback-small');
 
         const correctSynth = new Tone.PolySynth(Tone.Synth).toDestination();
         const wrongSynth = new Tone.Synth().toDestination();
@@ -150,126 +204,180 @@
         function playCorrectSound() {
             Tone.start();
             const now = Tone.now();
-            correctSynth.triggerAttackRelease("B5", "8n", now);
-            correctSynth.triggerAttackRelease("E6", "2n", now + 0.15);
+            correctSynth.triggerAttackRelease("B5", "16n", now);
+            correctSynth.triggerAttackRelease("E6", "8n", now + 0.15);
         }
 
         function playWrongSound() {
             Tone.start();
             const now = Tone.now();
             wrongSynth.triggerAttackRelease("E4", "8n", now);
-            wrongSynth.frequency.exponentialRampTo("E2", 0.5, now + 0.1);
+            wrongSynth.frequency.exponentialRampTo("E2", 0.4, now);
+        }
+
+        function init() {
+            generateSettingsUI();
+            generateProblem();
+            window.addEventListener('resize', () => {
+                if (displayMode === 'scatter') {
+                    clearTimeout(window.resizeTimer);
+                    window.resizeTimer = setTimeout(renderMoney, 200);
+                }
+            });
+        }
+
+        function setDisplayMode(mode) {
+            displayMode = mode;
+            const btnS = document.getElementById('btn-scatter');
+            const btnA = document.getElementById('btn-align');
+            const activeStyle = 'padding:4px 10px;border-radius:6px;font-weight:700;font-size:0.85rem;border:none;cursor:pointer;background:white;color:#16a34a;box-shadow:0 1px 3px rgba(0,0,0,0.1);';
+            const inactiveStyle = 'padding:4px 10px;border-radius:6px;font-weight:700;font-size:0.85rem;border:none;cursor:pointer;background:transparent;color:#6b7280;';
+            if (mode === 'scatter') {
+                btnS.style.cssText = activeStyle;
+                btnA.style.cssText = inactiveStyle;
+                container.classList.remove('mode-align');
+            } else {
+                btnA.style.cssText = activeStyle;
+                btnS.style.cssText = inactiveStyle;
+                container.classList.add('mode-align');
+            }
+            renderMoney();
         }
 
         function generateProblem() {
             currentTotal = 0;
-            container.innerHTML = '';
-            feedbackTextEl.innerText = '';
-            feedbackTextEl.classList.remove('anim-correct');
-            feedbackSmallEl.innerText = '';
-            inputEl.value = '';
+            currentMoneyElements = [];
 
-            const items = [];
+            document.getElementById('feedback-text').innerText = '';
+            document.getElementById('feedback-text').classList.remove('anim-correct');
+            document.getElementById('feedback-small').innerText = '';
+            document.getElementById('answer-input').value = '';
+            document.getElementById('answer-input').focus();
+
             moneyTypes.forEach(mt => {
-                const count = Math.floor(Math.random() * (settings[mt.value].max - settings[mt.value].min + 1)) + settings[mt.value].min;
+                const count = getRandomInt(settings[mt.value].min, settings[mt.value].max);
                 for (let i = 0; i < count; i++) {
                     currentTotal += mt.value;
                     const el = document.createElement('div');
                     el.className = `money ${mt.type} ${mt.class}`;
                     el.innerText = mt.value;
                     el.dataset.value = mt.value;
-                    items.push(el);
+                    currentMoneyElements.push(el);
                 }
             });
 
-            items.sort((a, b) => b.dataset.value - a.dataset.value);
-            renderMoney(items);
+            currentMoneyElements.sort((a, b) => parseInt(b.dataset.value) - parseInt(a.dataset.value));
+            renderMoney();
         }
 
-        function renderMoney(items) {
+        function renderMoney() {
             container.innerHTML = '';
+            if (currentMoneyElements.length === 0) return;
             if (displayMode === 'align') {
-                container.classList.add('mode-align');
-                items.forEach(el => container.appendChild(el));
+                currentMoneyElements.forEach(el => container.appendChild(el));
             } else {
-                container.classList.remove('mode-align');
-                layoutScatter(items);
+                layoutScatter(currentMoneyElements);
             }
         }
 
         function layoutScatter(elements) {
             const rect = container.getBoundingClientRect();
-            if (rect.width === 0) return;
-            const placed = [];
+            if (rect.width === 0 || rect.height === 0) return;
+
+            const placedRects = [];
+            const padding = 5;
 
             elements.forEach(el => {
                 el.style.visibility = 'hidden';
                 el.style.position = 'absolute';
                 container.appendChild(el);
-                const w = el.offsetWidth, h = el.offsetHeight;
-                
-                let x, y, overlap, attempts = 0;
-                do {
-                    x = Math.random() * (rect.width - w - 20) + 10;
-                    y = Math.random() * (rect.height - h - 20) + 10;
-                    overlap = placed.some(r => !(x + w < r.x || x > r.x + r.w || y + h < r.y || y > r.y + r.h));
-                    attempts++;
-                } while (overlap && attempts < 100);
 
-                const angle = el.classList.contains('bill') ? (Math.random() - 0.5) * 20 : Math.random() * 360;
+                const w = el.offsetWidth;
+                const h = el.offsetHeight;
+                let x = 0, y = 0, isOverlapping = true, attempts = 0;
+
+                while (isOverlapping && attempts < 150) {
+                    x = Math.random() * Math.max(0, rect.width  - w - padding * 2) + padding;
+                    y = Math.random() * Math.max(0, rect.height - h - padding * 2) + padding;
+                    const cur = { left: x, right: x + w, top: y, bottom: y + h };
+                    isOverlapping = placedRects.some(r =>
+                        !(cur.right + padding < r.left || cur.left - padding > r.right ||
+                          cur.bottom + padding < r.top || cur.top - padding > r.bottom)
+                    );
+                    attempts++;
+                }
+
+                const angle = el.classList.contains('bill')
+                    ? (Math.random() - 0.5) * 30
+                    : Math.random() * 360;
+
                 el.style.left = `${x}px`;
-                el.style.top = `${y}px`;
+                el.style.top  = `${y}px`;
                 el.style.transform = `rotate(${angle}deg)`;
                 el.style.visibility = 'visible';
-                placed.push({x, y, w, h});
+                placedRects.push({ left: x, right: x + w, top: y, bottom: y + h });
             });
         }
 
         function checkAnswer() {
-            feedbackTextEl.classList.remove('anim-correct');
-            void feedbackTextEl.offsetWidth; 
-            const ans = parseInt(inputEl.value, 10);
-            
-            if (isNaN(ans)) {
-                feedbackSmallEl.innerText = 'すうじをいれてね！';
-                feedbackSmallEl.className = 'absolute -top-6 left-1/2 transform -translate-x-1/2 text-orange-500 font-bold';
+            const ftEl = document.getElementById('feedback-text');
+            const fsEl = document.getElementById('feedback-small');
+            ftEl.classList.remove('anim-correct');
+            void ftEl.offsetWidth;
+
+            const userAnswer = parseInt(document.getElementById('answer-input').value, 10);
+            if (isNaN(userAnswer)) {
+                fsEl.innerText = 'すうじをいれてね！';
+                fsEl.style.color = '#f97316';
                 return;
             }
 
-            if (ans === currentTotal) {
-                feedbackTextEl.innerText = '大正解！🎉';
-                feedbackTextEl.classList.add('anim-correct');
+            if (userAnswer === currentTotal) {
+                fsEl.innerText = '';
+                ftEl.innerText = '大正解！🎉';
+                ftEl.classList.add('anim-correct');
                 playCorrectSound();
-                feedbackSmallEl.innerText = '';
             } else {
-                feedbackSmallEl.innerText = 'おしい！もういちど！';
-                feedbackSmallEl.className = 'absolute -top-6 left-1/2 transform -translate-x-1/2 text-blue-600 font-bold';
+                fsEl.innerText = 'おしい！もういちどかんがえてみよう！';
+                fsEl.style.color = '#3b82f6';
                 playWrongSound();
             }
         }
 
-        function setDisplayMode(mode) {
-            displayMode = mode;
-            document.getElementById('btn-scatter').className = mode === 'scatter' ? "px-3 py-1 text-xs md:text-sm rounded-md bg-white shadow font-bold text-green-600" : "px-3 py-1 text-xs md:text-sm rounded-md text-gray-500 font-bold";
-            document.getElementById('btn-align').className = mode === 'align' ? "px-3 py-1 text-xs md:text-sm rounded-md bg-white shadow font-bold text-green-600" : "px-3 py-1 text-xs md:text-sm rounded-md text-gray-500 font-bold";
-            generateProblem();
+        function getRandomInt(min, max) {
+            return Math.floor(Math.random() * (max - min + 1)) + min;
         }
 
         function generateSettingsUI() {
-            const list = document.getElementById('settings-list');
-            list.innerHTML = '';
+            const listEl = document.getElementById('settings-list');
+            listEl.innerHTML = '';
             moneyTypes.forEach(mt => {
-                const row = document.createElement('div');
-                row.className = 'flex items-center justify-between mb-3 bg-gray-50 p-2 rounded-lg border';
-                row.innerHTML = `
-                    <span class="font-bold w-12">${mt.value}円</span>
-                    <div class="flex items-center gap-1">
-                        <input type="number" id="min-${mt.value}" value="${settings[mt.value].min}" min="0" max="20" class="w-12 p-1 border rounded text-center">
-                        <span>~</span>
-                        <input type="number" id="max-${mt.value}" value="${settings[mt.value].max}" min="0" max="20" class="w-12 p-1 border rounded text-center">
-                        <span class="text-xs">枚</span>
+                const item = document.createElement('div');
+                item.style.cssText = 'display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;background:white;padding:10px 12px;border-radius:10px;border:1px solid #e5e7eb;';
+                const coinW = mt.type === 'bill' ? '80px' : '36px';
+                const coinH = mt.type === 'bill' ? '40px' : '36px';
+                item.innerHTML = `
+                    <div style="display:flex;align-items:center;gap:8px;min-width:80px;">
+                        <div class="money ${mt.type} ${mt.class}" style="position:static;transform:none;box-shadow:none;border-width:1px;width:${coinW};height:${coinH};font-size:0.85rem;">${mt.value}</div>
+                    </div>
+                    <div style="display:flex;align-items:center;gap:6px;">
+                        <div style="display:flex;flex-direction:column;align-items:center;">
+                            <label style="font-size:0.7rem;color:#9ca3af;margin-bottom:2px;">最小</label>
+                            <input type="number" id="min-${mt.value}" value="${settings[mt.value].min}" min="0" max="20" style="width:50px;padding:4px;border:1px solid #d1d5db;border-radius:6px;text-align:center;font-size:1rem;">
+                        </div>
+                        <span style="color:#d1d5db;">〜</span>
+                        <div style="display:flex;flex-direction:column;align-items:center;">
+                            <label style="font-size:0.7rem;color:#9ca3af;margin-bottom:2px;">最大</label>
+                            <input type="number" id="max-${mt.value}" value="${settings[mt.value].max}" min="0" max="20" style="width:50px;padding:4px;border:1px solid #d1d5db;border-radius:6px;text-align:center;font-size:1rem;">
+                        </div>
+                        <span style="font-size:0.85rem;color:#6b7280;">枚</span>
                     </div>`;
-                list.appendChild(row);
+                listEl.appendChild(item);
+
+                const minInput = item.querySelector(`#min-${mt.value}`);
+                const maxInput = item.querySelector(`#max-${mt.value}`);
+                minInput.addEventListener('change', () => { if (+minInput.value > +maxInput.value) maxInput.value = minInput.value; });
+                maxInput.addEventListener('change', () => { if (+maxInput.value < +minInput.value) minInput.value = maxInput.value; });
             });
         }
 
@@ -280,14 +388,16 @@
 
         function saveSettings() {
             moneyTypes.forEach(mt => {
-                settings[mt.value].min = parseInt(document.getElementById(`min-${mt.value}`).value) || 0;
-                settings[mt.value].max = parseInt(document.getElementById(`max-${mt.value}`).value) || 0;
+                const minVal = parseInt(document.getElementById(`min-${mt.value}`).value, 10) || 0;
+                const maxVal = parseInt(document.getElementById(`max-${mt.value}`).value, 10) || 0;
+                settings[mt.value].min = minVal;
+                settings[mt.value].max = Math.max(minVal, maxVal);
             });
             document.getElementById('settings-modal').style.display = 'none';
             generateProblem();
         }
 
-        window.onload = () => { generateProblem(); };
+        init();
     </script>
 </body>
 </html>
