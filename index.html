@@ -17,30 +17,36 @@
 
   * { box-sizing: border-box; margin: 0; padding: 0; }
 
-  body {
+  html, body {
+    width: 100%; height: 100%;
     font-family: 'BIZ UDPGothic', 'BIZ UDGothic', sans-serif;
     background: var(--bg);
-    height: 100vh;
     overflow: hidden;
     touch-action: manipulation;
   }
 
-  .screen { display: none; width: 100vw; height: 100vh; position: absolute; top: 0; left: 0; }
+  .screen {
+    display: none; position: absolute;
+    top: 0; left: 0; width: 100%; height: 100%;
+  }
   .screen.active { display: flex; }
 
-  /* ===== MAIN SCREEN ===== */
+  /* ============ MAIN SCREEN ============ */
   #main-screen {
     flex-direction: column;
-    align-items: center;
-    padding: 8px 10px 6px;
-    gap: 6px;
+    align-items: stretch;
+    padding: 6px 8px 4px;
+    gap: 5px;
   }
 
+  /* トグル */
   #view-toggle {
-    display: flex; gap: 8px; flex-shrink: 0;
+    display: flex; gap: 8px;
+    justify-content: center;
+    flex-shrink: 0;
   }
   .toggle-btn {
-    padding: 5px 16px; border-radius: 20px;
+    padding: 4px 18px; border-radius: 20px;
     border: 2px solid var(--border); background: white;
     font-size: 14px; font-weight: bold; color: var(--sub);
     cursor: pointer; font-family: inherit;
@@ -48,97 +54,127 @@
   }
   .toggle-btn.active { background: var(--accent); border-color: var(--accent); color: white; }
 
-  /* coins area */
+  /* コインエリア — flex:1 で残り全部 */
   #coins-area {
-    width: 100%; flex: 1;
+    flex: 1;
+    min-height: 0;
     background: var(--surface);
     border: 2px solid var(--border);
-    border-radius: 20px;
-    position: relative; overflow: hidden; min-height: 0;
+    border-radius: 18px;
+    position: relative;
+    overflow: hidden;
   }
-  #coins-area.aligned {
-    display: flex; flex-direction: column;
-    justify-content: center;
-    padding: 12px 16px; gap: 8px; overflow-y: auto;
-  }
-  #coins-area.scattered { display: block; }
 
-  .align-row {
-    display: flex; align-items: center;
-    gap: 6px; flex-wrap: wrap;
-  }
-  .align-label {
-    font-size: 13px; color: var(--sub);
-    min-width: 42px; text-align: right; flex-shrink: 0;
-  }
+  /* バラバラ */
+  #coins-area.scattered { display: block; }
   .coin-item { position: absolute; user-select: none; }
   .coin-item svg { display: block; }
 
-  /* bottom */
+  /* 整列 — 2列グリッド */
+  #coins-area.aligned {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    align-content: start;
+    gap: 0;
+    padding: 8px 10px;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  .align-row {
+    display: flex; align-items: center;
+    gap: 5px; flex-wrap: wrap;
+    padding: 5px 4px;
+    border-bottom: 1px solid var(--border);
+  }
+  /* 奇数行（右列）の左ボーダー */
+  #coins-area.aligned .align-row:nth-child(odd) {
+    border-right: 1px solid var(--border);
+    padding-right: 8px;
+  }
+  #coins-area.aligned .align-row:nth-child(even) {
+    padding-left: 8px;
+  }
+  .align-label {
+    font-size: 12px; color: var(--sub);
+    min-width: 38px; text-align: right; flex-shrink: 0;
+  }
+
+  /* ============ BOTTOM AREA ============ */
   #bottom-area {
-    width: 100%; display: flex;
-    align-items: center; justify-content: center;
-    gap: 16px; flex-shrink: 0; padding: 0 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 14px;
+    flex-shrink: 0;
+    padding: 2px 4px;
   }
 
-  #answer-block {
-    display: flex; flex-direction: column;
-    align-items: center; gap: 8px;
-  }
-  #answer-row {
-    display: flex; align-items: baseline; gap: 4px;
-  }
-  #answer-display {
-    font-size: 42px; font-weight: bold; color: var(--text);
-    border-bottom: 3px solid var(--border);
-    padding: 2px 10px; min-width: 130px;
-    text-align: center; min-height: 54px; line-height: 1.2;
-  }
-  #yen-label {
-    font-size: 28px; font-weight: bold; color: var(--sub);
-  }
-
+  /* テンキー */
   #numpad {
-    display: grid; grid-template-columns: repeat(3, 1fr);
-    gap: 5px; width: min(210px, 58vw); flex-shrink: 0;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 5px;
+    width: min(204px, 55vw);
+    flex-shrink: 0;
   }
   .num-btn {
-    background: white; border: 2px solid var(--border);
-    border-radius: 10px; font-size: 18px; font-weight: bold;
-    color: var(--text); padding: 9px 0; cursor: pointer;
-    -webkit-tap-highlight-color: transparent; font-family: inherit;
+    background: white;
+    border: 2px solid var(--border);
+    border-radius: 10px;
+    font-size: 17px; font-weight: bold;
+    color: var(--text);
+    padding: 8px 0;
+    cursor: pointer;
+    font-family: inherit;
+    -webkit-tap-highlight-color: transparent;
   }
-  .num-btn:active { background: #fff0cc; transform: scale(0.92); }
-  .num-btn.del { font-size: 15px; color: var(--sub); }
+  .num-btn:active { background: #fff0cc; transform: scale(0.91); }
+  .num-btn.del { font-size: 14px; color: var(--sub); }
   .num-btn.enter {
     background: var(--accent); color: white;
-    border-color: var(--accent); font-size: 13px; font-weight: bold;
+    border-color: var(--accent); font-size: 13px;
   }
   .num-btn.enter:active { background: #c97020; }
 
+  /* 答え欄 */
+  #answer-block {
+    display: flex; flex-direction: column;
+    align-items: center; gap: 8px; flex-shrink: 0;
+  }
+  #answer-row { display: flex; align-items: baseline; gap: 4px; }
+  #answer-display {
+    font-size: 40px; font-weight: bold; color: var(--text);
+    border-bottom: 3px solid var(--border);
+    padding: 2px 8px;
+    min-width: 120px; text-align: center;
+    line-height: 1.2;
+  }
+  #yen-label { font-size: 26px; font-weight: bold; color: var(--sub); }
+
   #next-btn {
-    display: none; padding: 9px 26px;
+    display: none; padding: 8px 24px;
     background: var(--accent); color: white;
-    border: none; border-radius: 22px;
-    font-size: 16px; font-weight: bold;
+    border: none; border-radius: 20px;
+    font-size: 15px; font-weight: bold;
     cursor: pointer; font-family: inherit;
+    -webkit-tap-highlight-color: transparent;
   }
   #next-btn.show { display: block; }
 
-  /* gear */
+  /* 歯車 */
   #gear-btn {
-    position: fixed; bottom: 12px; right: 12px;
-    width: 36px; height: 36px;
+    position: fixed; bottom: 10px; right: 10px;
+    width: 34px; height: 34px;
     background: none; border: none; cursor: pointer;
     opacity: 0.22; padding: 0;
     -webkit-tap-highlight-color: transparent; z-index: 100;
   }
   #gear-btn:hover { opacity: 0.5; }
 
-  /* feedback: 〇 text only, big, pop then fade */
+  /* ============ FEEDBACK ============ */
   #feedback {
     position: fixed; top: 0; left: 0;
-    width: 100vw; height: 100vh;
+    width: 100%; height: 100%;
     display: flex; align-items: center; justify-content: center;
     pointer-events: none; z-index: 200;
   }
@@ -147,9 +183,7 @@
     color: var(--correct);
     opacity: 0; transform: scale(0.3);
   }
-  #feedback-maru.show {
-    animation: pop-maru 1.5s ease forwards;
-  }
+  #feedback-maru.show { animation: pop-maru 1.5s ease forwards; }
   @keyframes pop-maru {
     0%   { opacity: 0; transform: scale(0.3); }
     18%  { opacity: 1; transform: scale(1.3); }
@@ -158,33 +192,30 @@
     100% { opacity: 0; transform: scale(2.4); }
   }
 
-  /* ===== SETTINGS ===== */
+  /* ============ SETTINGS SCREEN ============ */
   #settings-screen {
     flex-direction: column; align-items: center;
-    padding: 20px 14px; gap: 14px; overflow-y: auto;
+    padding: 18px 14px; gap: 12px; overflow-y: auto;
   }
   #settings-title { font-size: 20px; font-weight: bold; color: var(--text); }
   .settings-card {
-    width: 100%; max-width: 500px;
+    width: 100%; max-width: 520px;
     background: var(--surface);
     border: 2px solid var(--border); border-radius: 16px;
-    padding: 14px 16px;
+    padding: 12px 14px;
   }
   .settings-card h3 { font-size: 13px; color: var(--sub); margin-bottom: 10px; }
-
   .setting-row {
     display: flex; align-items: center;
     justify-content: space-between;
-    padding: 7px 0; border-bottom: 1px solid var(--border); gap: 8px;
+    padding: 6px 0; border-bottom: 1px solid var(--border); gap: 8px;
   }
   .setting-row:last-child { border-bottom: none; }
   .setting-label {
     display: flex; align-items: center;
     gap: 7px; font-size: 14px; font-weight: bold; color: var(--text);
   }
-  .setting-controls {
-    display: flex; align-items: center; gap: 4px;
-  }
+  .setting-controls { display: flex; align-items: center; gap: 3px; }
   .step-btn {
     width: 30px; height: 30px; border-radius: 50%;
     border: 2px solid var(--border); background: white;
@@ -193,26 +224,23 @@
     -webkit-tap-highlight-color: transparent;
   }
   .step-btn:active { background: #fff0cc; }
-  .range-label {
-    font-size: 13px; color: var(--sub); margin: 0 4px; white-space: nowrap;
-  }
+  .range-label { font-size: 12px; color: var(--sub); margin: 0 3px; white-space: nowrap; }
   .count-val {
     font-size: 16px; font-weight: bold; color: var(--text);
-    min-width: 22px; text-align: center;
+    min-width: 20px; text-align: center;
   }
-
   #back-btn {
-    padding: 11px 44px;
+    padding: 10px 44px;
     background: var(--accent); color: white;
     border: none; border-radius: 22px;
-    font-size: 17px; font-weight: bold;
+    font-size: 16px; font-weight: bold;
     cursor: pointer; font-family: inherit;
   }
 </style>
 </head>
 <body>
 
-<!-- MAIN -->
+<!-- ===== MAIN ===== -->
 <div id="main-screen" class="screen active">
   <div id="view-toggle">
     <button class="toggle-btn active" id="btn-scatter" onclick="setView('scattered')">バラバラ</button>
@@ -236,7 +264,6 @@
       <button class="num-btn"       onclick="numInput('0')">0</button>
       <button class="num-btn enter" onclick="checkAnswer()">こたえる</button>
     </div>
-
     <div id="answer-block">
       <div id="answer-row">
         <div id="answer-display"><span id="answer-text">　</span></div>
@@ -247,7 +274,7 @@
   </div>
 </div>
 
-<!-- SETTINGS -->
+<!-- ===== SETTINGS ===== -->
 <div id="settings-screen" class="screen">
   <div id="settings-title">⚙️ せってい</div>
   <div class="settings-card">
@@ -257,15 +284,15 @@
   <button id="back-btn" onclick="closeSettings()">もどる</button>
 </div>
 
-<!-- Gear -->
+<!-- 歯車 -->
 <button id="gear-btn" onclick="openSettings()">
-  <svg viewBox="0 0 24 24" fill="none" stroke="#666" stroke-width="1.8" width="36" height="36">
+  <svg viewBox="0 0 24 24" fill="none" stroke="#666" stroke-width="1.8" width="34" height="34">
     <circle cx="12" cy="12" r="3"/>
     <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
   </svg>
 </button>
 
-<!-- Feedback -->
+<!-- フィードバック -->
 <div id="feedback">
   <div id="feedback-maru">〇</div>
 </div>
@@ -281,7 +308,6 @@ const DENOMS = [
   { val: 1000, label: '1000円', type: 'note' },
 ];
 
-// min〜max (デフォルト: 10円×0〜4, 50円×0〜2, 100円×0〜3, 500円×0〜1)
 let ranges = {
   1:    { min: 0, max: 0 },
   5:    { min: 0, max: 0 },
@@ -297,11 +323,12 @@ let correctAmount = 0;
 let answered = false;
 let viewMode = 'scattered';
 
-// ===== SVG =====
+/* ===== SVG生成 =====
+   数字を大きく・5円50円は穴を避けて上部に配置
+*/
 function coinSVG(val, size) {
-  // 1円: グレー, 5円: 金色, 10円: 赤銅色, 50/100/500: シルバー
   const C = {
-    1:   { bg:'#b2b2b2', inner:'#d0d0d0', rim:'#888', text:'1',   hole:false },
+    1:   { bg:'#b2b2b2', inner:'#d0d0d0', rim:'#888',    text:'1',   hole:false },
     5:   { bg:'#c8a84b', inner:'#e0c060', rim:'#a07830', text:'5',   hole:true  },
     10:  { bg:'#b87333', inner:'#d4946a', rim:'#8a4820', text:'10',  hole:false },
     50:  { bg:'#b0b0b0', inner:'#d0d0d0', rim:'#808080', text:'50',  hole:true  },
@@ -310,32 +337,54 @@ function coinSVG(val, size) {
   };
   const c = C[val];
   const r = size / 2;
-  const ts = val >= 100 ? size * 0.21 : val >= 10 ? size * 0.25 : size * 0.30;
+  const holeR = size * 0.11; // 穴の半径
+
+  // 数字サイズ: より大きく
+  const ts = val >= 100 ? size * 0.26
+           : val >= 10  ? size * 0.30
+           :              size * 0.36;
+
+  // 5円・50円: 穴(中央)を避けて上部に配置
+  // 穴の上端 = r - holeR。余白を少し取ってその上に収める。
+  // 他: 中央配置
+  let textY;
+  if (c.hole) {
+    // 上部 1/3 付近に文字中心を置く
+    textY = r * 0.52 + ts * 0.38;
+  } else {
+    textY = r + ts * 0.38;
+  }
+
   const hole = c.hole
-    ? `<circle cx="${r}" cy="${r}" r="${size*0.11}" fill="#fff8e7" stroke="${c.rim}" stroke-width="1.2"/>`
+    ? `<circle cx="${r}" cy="${r}" r="${holeR}" fill="#fff8e7" stroke="${c.rim}" stroke-width="1.2"/>`
     : '';
+
   return `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" xmlns="http://www.w3.org/2000/svg">
-    <circle cx="${r}" cy="${r}" r="${r-1}" fill="${c.rim}"/>
-    <circle cx="${r}" cy="${r}" r="${r-3}" fill="${c.bg}"/>
-    <circle cx="${r}" cy="${r}" r="${r-5}" fill="${c.inner}" opacity="0.55"/>
-    ${hole}
-    <text x="${r}" y="${r + ts*0.42}" text-anchor="middle" font-size="${ts}" font-weight="bold" fill="${c.rim}" font-family="BIZ UDPGothic,sans-serif">${c.text}</text>
-  </svg>`;
+  <circle cx="${r}" cy="${r}" r="${r-1}" fill="${c.rim}"/>
+  <circle cx="${r}" cy="${r}" r="${r-3}" fill="${c.bg}"/>
+  <circle cx="${r}" cy="${r}" r="${r-5}" fill="${c.inner}" opacity="0.5"/>
+  ${hole}
+  <text x="${r}" y="${textY}" text-anchor="middle"
+    font-size="${ts}" font-weight="900"
+    fill="${c.rim}" font-family="BIZ UDPGothic,sans-serif">${c.text}</text>
+</svg>`;
 }
 
 function noteSVG(val, w, h) {
-  // 1000円: ベージュ
   const bg = '#e8d9b8'; const border = '#b09060'; const inner = '#f5ead0';
+  const ts = h * 0.36;
   return `<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" xmlns="http://www.w3.org/2000/svg">
-    <rect x="1" y="1" width="${w-2}" height="${h-2}" rx="5" fill="${border}"/>
-    <rect x="3" y="3" width="${w-6}" height="${h-6}" rx="4" fill="${bg}"/>
-    <rect x="6" y="6" width="${w-12}" height="${h-12}" rx="3" fill="${inner}" opacity="0.55"/>
-    <circle cx="${w*0.5}" cy="${h*0.5}" r="${h*0.28}" fill="${border}" opacity="0.18"/>
-    <text x="${w*0.5}" y="${h*0.59}" text-anchor="middle" font-size="${h*0.33}" font-weight="bold" fill="${border}" font-family="BIZ UDPGothic,sans-serif">1000</text>
-  </svg>`;
+  <rect x="1" y="1" width="${w-2}" height="${h-2}" rx="5" fill="${border}"/>
+  <rect x="3" y="3" width="${w-6}" height="${h-6}" rx="4" fill="${bg}"/>
+  <rect x="6" y="6" width="${w-12}" height="${h-12}" rx="3" fill="${inner}" opacity="0.5"/>
+  <circle cx="${w*0.5}" cy="${h*0.5}" r="${h*0.27}" fill="${border}" opacity="0.15"/>
+  <text x="${w*0.5}" y="${h*0.60}" text-anchor="middle"
+    font-size="${ts}" font-weight="900"
+    fill="${border}" font-family="BIZ UDPGothic,sans-serif">1000</text>
+</svg>`;
 }
 
-// ===== QUESTION =====
+/* ===== 問題生成 ===== */
 function generateQuestion() {
   correctAmount = 0;
   const items = [];
@@ -359,57 +408,82 @@ function generateQuestion() {
 
 let currentItems = [];
 
+/* ===== コイン描画 ===== */
 function renderCoins(items) {
   const area = document.getElementById('coins-area');
   area.innerHTML = '';
 
   const areaW = area.clientWidth  || 360;
-  const areaH = area.clientHeight || 300;
+  const areaH = area.clientHeight || 280;
 
   if (viewMode === 'scattered') {
     area.className = 'scattered';
-    const coinSize = Math.max(48, Math.min(78, Math.floor(areaH / 4.2)));
-    const noteW = Math.floor(coinSize * 1.7); const noteH = Math.floor(coinSize);
+
+    // コインサイズ: 枚数が多いほど小さく（最小40, 最大76）
+    const n = Math.max(items.length, 1);
+    const rawSize = Math.sqrt((areaW * areaH * 0.55) / n);
+    const coinSize = Math.max(40, Math.min(76, Math.round(rawSize)));
+    const noteW = Math.round(coinSize * 1.7);
+    const noteH = Math.round(coinSize * 0.98);
+
     const placed = [];
     const shuffled = [...items].sort(() => Math.random() - 0.5);
+
     for (const d of shuffled) {
       const isNote = d.type === 'note';
       const w = isNote ? noteW : coinSize;
       const h = isNote ? noteH : coinSize;
       let x, y, tries = 0;
       do {
-        x = Math.random() * (areaW - w - 8) + 4;
-        y = Math.random() * (areaH - h - 8) + 4;
+        x = Math.random() * (areaW - w - 6) + 3;
+        y = Math.random() * (areaH - h - 6) + 3;
         tries++;
-      } while (tries < 90 && placed.some(p =>
-        Math.abs(p.x - x) < w * 0.70 && Math.abs(p.y - y) < h * 0.70
+      } while (tries < 100 && placed.some(p =>
+        Math.abs(p.x - x) < w * 0.68 && Math.abs(p.y - y) < h * 0.68
       ));
       placed.push({ x, y });
+
       const el = document.createElement('div');
       el.className = 'coin-item';
-      el.style.cssText = `left:${x}px;top:${y}px;width:${w}px;height:${h}px;transform:rotate(${(Math.random()-0.5)*26}deg)`;
+      const rot = (Math.random() - 0.5) * 24;
+      el.style.cssText = `left:${x}px;top:${y}px;width:${w}px;height:${h}px;transform:rotate(${rot}deg)`;
       el.innerHTML = isNote ? noteSVG(d.val, w, h) : coinSVG(d.val, coinSize);
       area.appendChild(el);
     }
+
   } else {
+    // 整列: 2列グリッド
     area.className = 'aligned';
-    const coinSize = Math.max(40, Math.min(64, Math.floor(areaH / 5.5)));
-    const noteW = Math.floor(coinSize * 1.7); const noteH = Math.floor(coinSize);
+
+    // 金種でグループ化 → 大きい順ソート
     const groups = {};
     for (const d of items) {
       if (!groups[d.val]) groups[d.val] = { denom: d, count: 0 };
       groups[d.val].count++;
     }
-    for (const g of Object.values(groups).sort((a,b) => b.denom.val - a.denom.val)) {
+    const sorted = Object.values(groups).sort((a, b) => b.denom.val - a.denom.val);
+
+    // コインサイズ: 行数に応じて調整
+    const rows = sorted.length;
+    const coinSize = Math.max(36, Math.min(58, Math.floor((areaH - 20) / Math.ceil(rows / 2) - 14)));
+    const noteW = Math.round(coinSize * 1.65);
+    const noteH = Math.round(coinSize * 0.95);
+
+    for (const g of sorted) {
       const row = document.createElement('div');
       row.className = 'align-row';
+
       const lbl = document.createElement('div');
-      lbl.className = 'align-label'; lbl.textContent = g.denom.label;
+      lbl.className = 'align-label';
+      lbl.textContent = g.denom.label;
       row.appendChild(lbl);
+
       const isNote = g.denom.type === 'note';
       for (let i = 0; i < g.count; i++) {
         const el = document.createElement('div');
-        el.innerHTML = isNote ? noteSVG(g.denom.val, noteW, noteH) : coinSVG(g.denom.val, coinSize);
+        el.innerHTML = isNote
+          ? noteSVG(g.denom.val, noteW, noteH)
+          : coinSVG(g.denom.val, coinSize);
         row.appendChild(el);
       }
       area.appendChild(row);
@@ -422,17 +496,18 @@ function newQuestion() {
   document.getElementById('answer-text').textContent = '　';
   document.getElementById('next-btn').classList.remove('show');
   currentItems = generateQuestion();
-  renderCoins(currentItems);
+  // DOMサイズが確定してからrenderするため少しだけ待つ
+  requestAnimationFrame(() => renderCoins(currentItems));
 }
 
 function setView(mode) {
   viewMode = mode;
-  document.getElementById('btn-scatter').classList.toggle('active', mode==='scattered');
-  document.getElementById('btn-align').classList.toggle('active',  mode==='aligned');
+  document.getElementById('btn-scatter').classList.toggle('active', mode === 'scattered');
+  document.getElementById('btn-align').classList.toggle('active',  mode === 'aligned');
   renderCoins(currentItems);
 }
 
-// ===== NUMPAD =====
+/* ===== テンキー ===== */
 function numInput(d) {
   if (answered || currentAnswer.length >= 6) return;
   currentAnswer += d;
@@ -440,11 +515,11 @@ function numInput(d) {
 }
 function numDel() {
   if (answered) return;
-  currentAnswer = currentAnswer.slice(0,-1);
+  currentAnswer = currentAnswer.slice(0, -1);
   document.getElementById('answer-text').textContent = currentAnswer || '　';
 }
 
-// ===== CHECK =====
+/* ===== 正誤判定 ===== */
 function checkAnswer() {
   if (answered || currentAnswer === '') return;
   answered = true;
@@ -461,44 +536,44 @@ function checkAnswer() {
 }
 function nextQuestion() { newQuestion(); }
 
-// ===== FEEDBACK =====
+/* ===== フィードバック ===== */
 function showMaru() {
   const el = document.getElementById('feedback-maru');
   el.className = ''; void el.offsetWidth; el.className = 'show';
   setTimeout(() => { el.className = ''; }, 1600);
 }
 
-// ===== AUDIO =====
+/* ===== 音 ===== */
 const AudioCtx = window.AudioContext || window.webkitAudioContext;
 let audioCtx = null;
 function getACtx() { if (!audioCtx) audioCtx = new AudioCtx(); return audioCtx; }
 
 function playCorrect() {
   const ctx = getACtx(), t = ctx.currentTime;
-  [[880,t,0.18],[1100,t+0.22,0.18]].forEach(([freq,start,dur])=>{
-    const o=ctx.createOscillator(), g=ctx.createGain();
-    o.type='sine'; o.frequency.value=freq;
-    g.gain.setValueAtTime(0.001,start);
-    g.gain.linearRampToValueAtTime(0.28,start+0.03);
-    g.gain.exponentialRampToValueAtTime(0.001,start+dur);
+  [[880,t,0.18],[1100,t+0.22,0.18]].forEach(([freq,start,dur]) => {
+    const o = ctx.createOscillator(), g = ctx.createGain();
+    o.type = 'sine'; o.frequency.value = freq;
+    g.gain.setValueAtTime(0.001, start);
+    g.gain.linearRampToValueAtTime(0.28, start + 0.03);
+    g.gain.exponentialRampToValueAtTime(0.001, start + dur);
     o.connect(g); g.connect(ctx.destination);
-    o.start(start); o.stop(start+dur+0.05);
+    o.start(start); o.stop(start + dur + 0.05);
   });
 }
 function playWrong() {
   const ctx = getACtx(), t = ctx.currentTime;
-  const o=ctx.createOscillator(), g=ctx.createGain();
-  o.type='sawtooth';
-  o.frequency.setValueAtTime(480,t);
-  o.frequency.exponentialRampToValueAtTime(110,t+0.5);
-  g.gain.setValueAtTime(0.001,t);
-  g.gain.linearRampToValueAtTime(0.2,t+0.04);
-  g.gain.exponentialRampToValueAtTime(0.001,t+0.5);
+  const o = ctx.createOscillator(), g = ctx.createGain();
+  o.type = 'sawtooth';
+  o.frequency.setValueAtTime(480, t);
+  o.frequency.exponentialRampToValueAtTime(110, t + 0.5);
+  g.gain.setValueAtTime(0.001, t);
+  g.gain.linearRampToValueAtTime(0.2, t + 0.04);
+  g.gain.exponentialRampToValueAtTime(0.001, t + 0.5);
   o.connect(g); g.connect(ctx.destination);
-  o.start(t); o.stop(t+0.55);
+  o.start(t); o.stop(t + 0.55);
 }
 
-// ===== SETTINGS =====
+/* ===== 設定画面 ===== */
 function openSettings() {
   buildSettingsUI();
   document.getElementById('main-screen').classList.remove('active');
@@ -515,7 +590,7 @@ function buildSettingsUI() {
   container.innerHTML = '';
   for (const d of DENOMS) {
     const isNote = d.type === 'note';
-    const thumb = isNote ? noteSVG(d.val,48,29) : coinSVG(d.val,32);
+    const thumb = isNote ? noteSVG(d.val, 46, 28) : coinSVG(d.val, 30);
     const r = ranges[d.val];
     const row = document.createElement('div');
     row.className = 'setting-row';
@@ -526,7 +601,7 @@ function buildSettingsUI() {
         <button class="step-btn" onclick="changeRange(${d.val},'min',-1)">－</button>
         <div class="count-val" id="rmin-${d.val}">${r.min}</div>
         <button class="step-btn" onclick="changeRange(${d.val},'min',+1)">＋</button>
-        <span class="range-label" style="margin-left:6px">最大</span>
+        <span class="range-label" style="margin-left:5px">最大</span>
         <button class="step-btn" onclick="changeRange(${d.val},'max',-1)">－</button>
         <div class="count-val" id="rmax-${d.val}">${r.max}</div>
         <button class="step-btn" onclick="changeRange(${d.val},'max',+1)">＋</button>
@@ -546,8 +621,14 @@ function changeRange(val, which, delta) {
   document.getElementById(`rmax-${val}`).textContent = r.max;
 }
 
-window.addEventListener('load', () => newQuestion());
-window.addEventListener('resize', () => { if (!answered) renderCoins(currentItems); });
+/* ===== 初期化 ===== */
+window.addEventListener('load', () => {
+  // ちょっと待ってからレンダリング（iOS Safariのレイアウト確定後）
+  setTimeout(() => newQuestion(), 50);
+});
+window.addEventListener('resize', () => {
+  if (!answered) renderCoins(currentItems);
+});
 </script>
 </body>
 </html>
