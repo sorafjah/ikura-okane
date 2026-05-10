@@ -153,6 +153,32 @@
         .custom-scrollbar::-webkit-scrollbar { width: 6px; }
         .custom-scrollbar::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 4px; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+
+        .npbtn {
+            font-size: 1.3rem;
+            font-weight: 700;
+            padding: 8px 4px;
+            border-radius: 8px;
+            border: 1px solid #e2e8f0;
+            background: #f8fafc;
+            color: #1e293b;
+            cursor: pointer;
+            box-shadow: 0 2px 0 #cbd5e1;
+            -webkit-tap-highlight-color: transparent;
+            user-select: none;
+        }
+        .npbtn:active {
+            box-shadow: none;
+            transform: translateY(2px);
+            background: #e2e8f0;
+        }
+        .npbtn-del {
+            background: #fee2e2;
+            border-color: #fca5a5;
+            color: #b91c1c;
+            box-shadow: 0 2px 0 #fca5a5;
+        }
+        .npbtn-del:active { background: #fca5a5; }
     </style>
 </head>
 <body>
@@ -170,24 +196,34 @@
         </div>
     </div>
 
-    <div id="answer-area">
+    <!-- 解答・テンキーエリア -->
+    <div id="answer-area" style="flex-shrink:0; background:white; border-top:2px solid #dcfce7; padding:6px 10px 6px; display:flex; flex-direction:column; gap:6px; position:relative;">
         <div id="feedback-small" style="position:absolute; top:-24px; left:50%; transform:translateX(-50%); font-size:0.9rem; font-weight:700; color:#3b82f6; white-space:nowrap;"></div>
-        <div style="display:flex; align-items:center; gap:4px;">
-            <input
-                type="text"
-                id="answer-input"
-                inputmode="numeric"
-                pattern="[0-9]*"
-                placeholder="0"
-                autocomplete="off"
-                autocorrect="off"
-                autocapitalize="off"
-                spellcheck="false"
-            >
-            <span style="font-size:1.1rem; font-weight:700; color:#374151;">円</span>
+
+        <!-- 入力表示＋確認ボタン行 -->
+        <div style="display:flex; align-items:center; justify-content:center; gap:8px;">
+            <div style="display:flex; align-items:center; gap:4px; background:#f9fafb; border:2px solid #d1d5db; border-radius:10px; padding:4px 10px; min-width:110px; justify-content:flex-end;">
+                <span id="answer-display" style="font-size:1.6rem; font-weight:700; color:#111827; letter-spacing:0.05em; min-width:60px; text-align:right;">0</span>
+                <span style="font-size:1.1rem; font-weight:700; color:#6b7280;">円</span>
+            </div>
+            <button onclick="checkAnswer()" style="white-space:nowrap; background:#a3e635; color:#374151; font-weight:700; padding:9px 16px; border-radius:8px; border:none; box-shadow:0 3px 0 #65a30d; cursor:pointer; font-size:1rem;">たしかめる</button>
+            <button onclick="generateProblem()" style="white-space:nowrap; background:#60a5fa; color:white; font-weight:700; padding:9px 16px; border-radius:8px; border:none; box-shadow:0 3px 0 #1d4ed8; cursor:pointer; font-size:1rem;">つぎのもんだい</button>
         </div>
-        <button onclick="checkAnswer()" style="white-space:nowrap; background:#a3e635; color:#374151; font-weight:700; padding:9px 16px; border-radius:8px; border:none; box-shadow:0 3px 0 #65a30d; cursor:pointer; font-size:1rem;">たしかめる</button>
-        <button onclick="generateProblem()" style="white-space:nowrap; background:#60a5fa; color:white; font-weight:700; padding:9px 16px; border-radius:8px; border:none; box-shadow:0 3px 0 #1d4ed8; cursor:pointer; font-size:1rem;">つぎのもんだい</button>
+
+        <!-- 独自テンキー -->
+        <div id="numpad" style="display:grid; grid-template-columns:repeat(6,1fr); gap:5px; max-width:400px; margin:0 auto; width:100%;">
+            <button class="npbtn" onclick="numpadInput('7')">7</button>
+            <button class="npbtn" onclick="numpadInput('8')">8</button>
+            <button class="npbtn" onclick="numpadInput('9')">9</button>
+            <button class="npbtn" onclick="numpadInput('4')">4</button>
+            <button class="npbtn" onclick="numpadInput('5')">5</button>
+            <button class="npbtn" onclick="numpadInput('6')">6</button>
+            <button class="npbtn" onclick="numpadInput('1')">1</button>
+            <button class="npbtn" onclick="numpadInput('2')">2</button>
+            <button class="npbtn" onclick="numpadInput('3')">3</button>
+            <button class="npbtn" onclick="numpadInput('0')" style="grid-column:span 2;">0</button>
+            <button class="npbtn npbtn-del" onclick="numpadBackspace()">⌫</button>
+        </div>
     </div>
 
     <!-- 大正解オーバーレイ（白抜きなし・影だけ） -->
@@ -237,10 +273,21 @@
         let currentMoneyElements = [];
         let displayMode = 'scatter';
 
-        const container = document.getElementById('money-container');
-        const inputEl   = document.getElementById('answer-input');
-        const ftEl      = document.getElementById('feedback-text');
-        const fsEl      = document.getElementById('feedback-small');
+        const container   = document.getElementById('money-container');
+        const displayEl   = document.getElementById('answer-display');
+        const ftEl        = document.getElementById('feedback-text');
+        const fsEl        = document.getElementById('feedback-small');
+        let answerVal = '';  // テンキー入力値（文字列）
+
+        function numpadInput(digit) {
+            if (answerVal.length >= 6) return;
+            answerVal += digit;
+            displayEl.textContent = answerVal || '0';
+        }
+        function numpadBackspace() {
+            answerVal = answerVal.slice(0, -1);
+            displayEl.textContent = answerVal || '0';
+        }
 
         const correctSynth = new Tone.PolySynth(Tone.Synth).toDestination();
         const wrongSynth   = new Tone.Synth().toDestination();
@@ -261,22 +308,13 @@
         function init() {
             generateSettingsUI();
             generateProblem();
-
+            // resizeはウィンドウ向きの変化のみ対応（キーボード出現は無視）
             window.addEventListener('resize', () => {
                 if (displayMode === 'scatter') {
                     clearTimeout(window.resizeTimer);
-                    window.resizeTimer = setTimeout(renderMoney, 200);
+                    window.resizeTimer = setTimeout(renderMoney, 300);
                 }
             });
-
-            if (window.visualViewport) {
-                window.visualViewport.addEventListener('resize', () => {
-                    if (displayMode === 'scatter') {
-                        clearTimeout(window.resizeTimer);
-                        window.resizeTimer = setTimeout(renderMoney, 200);
-                    }
-                });
-            }
         }
 
         function setDisplayMode(mode) {
@@ -304,7 +342,8 @@
             ftEl.innerText = '';
             ftEl.classList.remove('anim-correct');
             fsEl.innerText = '';
-            inputEl.value = '';
+            answerVal = '';
+            displayEl.textContent = '0';
 
             moneyTypes.forEach(mt => {
                 const count = getRandomInt(settings[mt.value].min, settings[mt.value].max);
@@ -375,11 +414,10 @@
             ftEl.classList.remove('anim-correct');
             void ftEl.offsetWidth;
 
-            const userAnswer = parseInt(inputEl.value, 10);
-            if (isNaN(userAnswer)) {
+            const userAnswer = parseInt(answerVal, 10);
+            if (!answerVal || isNaN(userAnswer)) {
                 fsEl.innerText = 'すうじをいれてね！';
                 fsEl.style.color = '#f97316';
-                inputEl.focus();
                 return;
             }
 
@@ -393,7 +431,6 @@
                 fsEl.innerText = 'おしい！もういちどかんがえてみよう！';
                 fsEl.style.color = '#3b82f6';
                 playWrongSound();
-                inputEl.select();
             }
         }
 
