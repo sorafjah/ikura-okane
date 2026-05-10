@@ -1,493 +1,746 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>お金を数えよう</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
-    <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>お金はいくら？</title>
+<style>
+  :root {
+    --bg: #fdf6e3;
+    --surface: #fff8e7;
+    --border: #e8d5a3;
+    --text: #3d2c00;
+    --sub: #8a6f3a;
+    --coin-1: #c8a84b;
+    --coin-5: #b8915a;
+    --coin-10: #c8a84b;
+    --coin-50: #c0c0c0;
+    --coin-100: #c0c0c0;
+    --coin-500: #c0c0c0;
+    --note-1000: #8fbf6a;
+    --correct: #4caf50;
+    --wrong: #e05050;
+    --accent: #e8913a;
+    --shadow: rgba(0,0,0,0.12);
+  }
 
-        html, body {
-            height: 100%;
-            width: 100%;
-            overflow: hidden;
-        }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
 
-        body {
-            font-family: 'Hiragino Maru Gothic ProN', 'Rounded M+ 1c', sans-serif;
-            background-color: #f0fdf4;
-            touch-action: manipulation;
-            display: flex;
-            flex-direction: column;
-            /* Safariのノッチ・ホームバー対応 */
-            padding-top: env(safe-area-inset-top);
-            padding-bottom: env(safe-area-inset-bottom);
-            padding-left: env(safe-area-inset-left);
-            padding-right: env(safe-area-inset-right);
-            /* dvhはSafariのアドレスバー縮小に追従する */
-            height: 100dvh;
-        }
+  body {
+    font-family: 'BIZ UDPGothic', 'BIZ UDGothic', sans-serif;
+    background: var(--bg);
+    min-height: 100vh;
+    overflow: hidden;
+    touch-action: manipulation;
+  }
 
-        .money {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            font-weight: 900;
-            box-shadow: 0 3px 5px rgba(0,0,0,0.1), inset 0 -2px 3px rgba(0,0,0,0.1);
-            user-select: none;
-            flex-shrink: 0;
-        }
+  /* ===== SCREENS ===== */
+  .screen { display: none; width: 100vw; height: 100vh; position: absolute; top: 0; left: 0; }
+  .screen.active { display: flex; }
 
-        .coin { border-radius: 50%; text-shadow: 1px 1px 0 rgba(255,255,255,0.7); }
-        .coin-1   { width:36px; height:36px; background-color:#e2e8f0; border:2px solid #cbd5e1; color:#475569; font-size:1rem; }
-        .coin-5   { width:44px; height:44px; background:radial-gradient(circle at center,transparent 15%,#fef08a 16%); border:2px solid #ca8a04; color:#854d0e; font-size:1.3rem; }
-        .coin-10  { width:48px; height:48px; background-color:#d97757; border:2px solid #9a3412; color:#431407; font-size:1.3rem; text-shadow:1px 1px 0 rgba(255,255,255,0.3); }
-        .coin-50  { width:44px; height:44px; background:radial-gradient(circle at center,transparent 15%,#e2e8f0 16%); border:2px solid #94a3b8; color:#334155; font-size:1.3rem; }
-        .coin-100 { width:50px; height:50px; background-color:#f1f5f9; border:2px solid #94a3b8; color:#334155; font-size:1.4rem; }
-        .coin-500 { width:58px; height:58px; background-color:#fef08a; border:2px solid #ca8a04; color:#854d0e; font-size:1.6rem; }
+  /* ===== MAIN SCREEN ===== */
+  #main-screen {
+    flex-direction: column;
+    align-items: center;
+    padding: 16px;
+    gap: 12px;
+    position: relative;
+  }
 
-        .bill { border-radius:4px; text-shadow:1px 1px 0 rgba(255,255,255,0.8); border:1px solid rgba(0,0,0,0.1); }
-        .bill-1000 {
-            width:130px; height:65px;
-            background-color:#e0f2fe;
-            background-image:
-                radial-gradient(circle at 50% 50%, #bae6fd 30%, transparent 70%),
-                linear-gradient(45deg, transparent 40%, #f0f9ff 40%, #f0f9ff 60%, transparent 60%);
-            color:#0369a1; font-size:1.6rem; letter-spacing:0.1em;
-            box-shadow:0 2px 4px rgba(0,0,0,0.1);
-        }
+  #title-bar {
+    font-size: 22px;
+    font-weight: bold;
+    color: var(--text);
+    letter-spacing: 0.05em;
+  }
 
-        #money-container {
-            position: relative;
-            flex: 1 1 0;
-            min-height: 0;
-        }
-        #money-container.mode-align {
-            display: flex;
-            flex-wrap: wrap;
-            justify-content: center;
-            align-content: flex-start;
-            gap: 10px;
-            padding: 12px;
-            overflow-y: auto;
-        }
-        #money-container.mode-align .money {
-            position: relative !important;
-            left: auto !important;
-            top: auto !important;
-            transform: none !important;
-        }
+  /* coins area */
+  #coins-area {
+    width: 100%;
+    flex: 1;
+    background: var(--surface);
+    border: 2px solid var(--border);
+    border-radius: 20px;
+    position: relative;
+    overflow: hidden;
+    min-height: 0;
+  }
 
-        #answer-area {
-            flex-shrink: 0;
-            background: white;
-            border-top: 2px solid #dcfce7;
-            padding: 8px 12px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
-            position: relative;
-        }
+  /* aligned view */
+  #coins-area.aligned {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 16px 20px;
+    gap: 10px;
+    overflow-y: auto;
+  }
 
-        #answer-input {
-            width: 90px;
-            text-align: right;
-            font-size: 1.5rem;
-            font-weight: 700;
-            padding: 2px 4px;
-            border: none;
-            border-bottom: 2px solid #d1d5db;
-            outline: none;
-            background: transparent;
-            -webkit-appearance: none;
-            appearance: none;
-        }
-        #answer-input:focus { border-bottom-color: #22c55e; }
+  .align-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
 
-        @keyframes popupAndFade {
-            0%   { transform: scale(0.5); opacity: 0; }
-            20%  { transform: scale(1.2); opacity: 1; }
-            40%  { transform: scale(1);   opacity: 1; }
-            80%  { transform: scale(1);   opacity: 1; }
-            100% { transform: scale(1.5); opacity: 0; }
-        }
-        .anim-correct { animation: popupAndFade 1.4s forwards; }
+  .align-label {
+    font-size: 13px;
+    color: var(--sub);
+    min-width: 44px;
+    text-align: right;
+  }
 
-        #settings-trigger {
-            opacity: 0.15;
-            transition: opacity 0.3s;
-            position: fixed;
-            bottom: calc(12px + env(safe-area-inset-bottom));
-            right: calc(12px + env(safe-area-inset-right));
-            z-index: 50;
-            background: rgba(255,255,255,0.5);
-            border: none;
-            border-radius: 50%;
-            padding: 8px;
-            cursor: pointer;
-        }
-        #settings-trigger:active { opacity: 0.8; }
+  /* scattered view */
+  #coins-area.scattered { display: block; }
 
-        .modal-bg {
-            position: fixed; inset: 0;
-            background: rgba(0,0,0,0.5);
-            display: none;
-            justify-content: center;
-            align-items: center;
-            z-index: 100;
-            padding: 16px;
-        }
-        .modal-box {
-            background: white;
-            border-radius: 16px;
-            width: 100%;
-            max-width: 420px;
-            max-height: 80dvh;
-            display: flex;
-            flex-direction: column;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-        }
-        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
-        .custom-scrollbar::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 4px; }
-        .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+  .coin-item {
+    position: absolute;
+    cursor: default;
+    user-select: none;
+    transition: transform 0.1s;
+  }
 
-        .npbtn {
-            font-size: 1.3rem;
-            font-weight: 700;
-            padding: 8px 4px;
-            border-radius: 8px;
-            border: 1px solid #e2e8f0;
-            background: #f8fafc;
-            color: #1e293b;
-            cursor: pointer;
-            box-shadow: 0 2px 0 #cbd5e1;
-            -webkit-tap-highlight-color: transparent;
-            user-select: none;
-        }
-        .npbtn:active {
-            box-shadow: none;
-            transform: translateY(2px);
-            background: #e2e8f0;
-        }
-        .npbtn-del {
-            background: #fee2e2;
-            border-color: #fca5a5;
-            color: #b91c1c;
-            box-shadow: 0 2px 0 #fca5a5;
-        }
-        .npbtn-del:active { background: #fca5a5; }
-    </style>
+  .coin-item svg { display: block; }
+
+  /* input area */
+  #answer-area {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+  }
+
+  #answer-label {
+    font-size: 16px;
+    color: var(--sub);
+  }
+
+  #answer-display {
+    font-size: 36px;
+    font-weight: bold;
+    color: var(--text);
+    letter-spacing: 0.05em;
+    min-width: 200px;
+    text-align: center;
+    border-bottom: 3px solid var(--border);
+    padding: 4px 12px;
+    min-height: 52px;
+  }
+
+  /* numpad */
+  #numpad {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    width: min(320px, 90vw);
+  }
+
+  .num-btn {
+    background: white;
+    border: 2px solid var(--border);
+    border-radius: 14px;
+    font-size: 24px;
+    font-weight: bold;
+    color: var(--text);
+    padding: 14px 0;
+    cursor: pointer;
+    transition: background 0.1s, transform 0.08s;
+    -webkit-tap-highlight-color: transparent;
+    font-family: inherit;
+  }
+
+  .num-btn:active { transform: scale(0.93); background: #fff0cc; }
+
+  .num-btn.del { font-size: 20px; color: var(--sub); }
+  .num-btn.enter {
+    background: var(--accent);
+    color: white;
+    border-color: var(--accent);
+    font-size: 18px;
+  }
+  .num-btn.enter:active { background: #c97020; }
+
+  /* view toggle */
+  #view-toggle {
+    display: flex;
+    gap: 8px;
+  }
+
+  .toggle-btn {
+    padding: 6px 18px;
+    border-radius: 20px;
+    border: 2px solid var(--border);
+    background: white;
+    font-size: 14px;
+    font-weight: bold;
+    color: var(--sub);
+    cursor: pointer;
+    font-family: inherit;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .toggle-btn.active {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: white;
+  }
+
+  /* settings gear */
+  #gear-btn {
+    position: fixed;
+    bottom: 16px;
+    right: 16px;
+    width: 40px;
+    height: 40px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    opacity: 0.25;
+    padding: 0;
+    -webkit-tap-highlight-color: transparent;
+    z-index: 100;
+  }
+  #gear-btn:hover { opacity: 0.5; }
+  #gear-btn svg { width: 40px; height: 40px; }
+
+  /* next btn */
+  #next-btn {
+    display: none;
+    padding: 10px 36px;
+    background: var(--accent);
+    color: white;
+    border: none;
+    border-radius: 24px;
+    font-size: 18px;
+    font-weight: bold;
+    cursor: pointer;
+    font-family: inherit;
+    -webkit-tap-highlight-color: transparent;
+  }
+  #next-btn.show { display: block; }
+
+  /* feedback overlay */
+  #feedback {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100vw; height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;
+    z-index: 200;
+  }
+
+  #feedback-circle {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 70px;
+    font-weight: bold;
+    opacity: 0;
+    transform: scale(0.5);
+    transition: none;
+    color: white;
+  }
+
+  #feedback-circle.correct {
+    background: var(--correct);
+    animation: pop-correct 1.4s ease forwards;
+  }
+  #feedback-circle.wrong {
+    background: var(--wrong);
+    animation: shake-wrong 0.6s ease forwards;
+  }
+
+  @keyframes pop-correct {
+    0%   { opacity: 0; transform: scale(0.5); }
+    20%  { opacity: 1; transform: scale(1.3); }
+    50%  { opacity: 1; transform: scale(1.0); }
+    80%  { opacity: 1; transform: scale(1.1); }
+    100% { opacity: 0; transform: scale(2.0); }
+  }
+  @keyframes shake-wrong {
+    0%   { opacity: 1; transform: scale(1) translateX(0); }
+    15%  { transform: scale(1) translateX(-16px); }
+    30%  { transform: scale(1) translateX(14px); }
+    45%  { transform: scale(1) translateX(-10px); }
+    60%  { transform: scale(1) translateX(8px); }
+    80%  { opacity: 1; transform: scale(0.9) translateX(0); }
+    100% { opacity: 0; transform: scale(0.7); }
+  }
+
+  /* ===== SETTINGS SCREEN ===== */
+  #settings-screen {
+    flex-direction: column;
+    align-items: center;
+    padding: 24px 20px;
+    gap: 16px;
+    overflow-y: auto;
+  }
+
+  #settings-title {
+    font-size: 22px;
+    font-weight: bold;
+    color: var(--text);
+  }
+
+  .settings-card {
+    width: 100%;
+    max-width: 460px;
+    background: var(--surface);
+    border: 2px solid var(--border);
+    border-radius: 16px;
+    padding: 16px 20px;
+  }
+
+  .settings-card h3 {
+    font-size: 15px;
+    color: var(--sub);
+    margin-bottom: 12px;
+  }
+
+  .setting-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--border);
+    gap: 12px;
+  }
+  .setting-row:last-child { border-bottom: none; }
+
+  .setting-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 16px;
+    font-weight: bold;
+    color: var(--text);
+  }
+
+  .setting-controls {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .step-btn {
+    width: 36px; height: 36px;
+    border-radius: 50%;
+    border: 2px solid var(--border);
+    background: white;
+    font-size: 20px;
+    line-height: 1;
+    cursor: pointer;
+    font-family: inherit;
+    color: var(--text);
+    display: flex; align-items: center; justify-content: center;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .step-btn:active { background: #fff0cc; }
+
+  .count-display {
+    font-size: 20px;
+    font-weight: bold;
+    color: var(--text);
+    min-width: 28px;
+    text-align: center;
+  }
+
+  #back-btn {
+    padding: 12px 48px;
+    background: var(--accent);
+    color: white;
+    border: none;
+    border-radius: 24px;
+    font-size: 18px;
+    font-weight: bold;
+    cursor: pointer;
+    font-family: inherit;
+  }
+
+  /* coin SVGs inline */
+  .coin-svg-1, .coin-svg-5, .coin-svg-10, .coin-svg-50,
+  .coin-svg-100, .coin-svg-500 { border-radius: 50%; }
+</style>
 </head>
 <body>
 
-    <header style="flex-shrink:0; background:white; box-shadow:0 1px 3px rgba(0,0,0,0.1); padding:6px 12px; display:flex; justify-content:space-between; align-items:center; z-index:10;">
-        <h1 style="font-size:1.1rem; font-weight:700; color:#15803d;">いくらあるかな？</h1>
-        <div style="display:flex; background:#f3f4f6; border-radius:8px; padding:3px; border:1px solid #e5e7eb; gap:2px;">
-            <button id="btn-scatter" onclick="setDisplayMode('scatter')" style="padding:5px 12px; border-radius:6px; font-weight:700; font-size:0.9rem; border:none; cursor:pointer; background:white; color:#16a34a; box-shadow:0 1px 3px rgba(0,0,0,0.1);">バラバラ</button>
-            <button id="btn-align"   onclick="setDisplayMode('align')"   style="padding:5px 12px; border-radius:6px; font-weight:700; font-size:0.9rem; border:none; cursor:pointer; background:transparent; color:#6b7280;">整列</button>
-        </div>
-    </header>
+<!-- ===== MAIN SCREEN ===== -->
+<div id="main-screen" class="screen active">
+  <div id="title-bar">お金はいくら？</div>
 
-    <div style="flex:1 1 0; min-height:0; padding:8px 10px 0; display:flex; flex-direction:column;">
-        <div id="money-container" style="background:white; border-radius:14px; border:3px solid #bbf7d0; box-shadow:inset 0 2px 6px rgba(0,0,0,0.05);">
-        </div>
+  <div id="view-toggle">
+    <button class="toggle-btn active" id="btn-scatter" onclick="setView('scattered')">バラバラ</button>
+    <button class="toggle-btn" id="btn-align" onclick="setView('aligned')">せいれつ</button>
+  </div>
+
+  <div id="coins-area" class="scattered"></div>
+
+  <div id="answer-area">
+    <div id="answer-label">ぜんぶで　いくらですか？</div>
+    <div id="answer-display"><span id="answer-text">　</span>円</div>
+
+    <div id="numpad">
+      <button class="num-btn" onclick="numInput('7')">7</button>
+      <button class="num-btn" onclick="numInput('8')">8</button>
+      <button class="num-btn" onclick="numInput('9')">9</button>
+      <button class="num-btn" onclick="numInput('4')">4</button>
+      <button class="num-btn" onclick="numInput('5')">5</button>
+      <button class="num-btn" onclick="numInput('6')">6</button>
+      <button class="num-btn" onclick="numInput('1')">1</button>
+      <button class="num-btn" onclick="numInput('2')">2</button>
+      <button class="num-btn" onclick="numInput('3')">3</button>
+      <button class="num-btn del" onclick="numDel()">⌫</button>
+      <button class="num-btn" onclick="numInput('0')">0</button>
+      <button class="num-btn enter" onclick="checkAnswer()">こたえる</button>
     </div>
 
-    <!-- 解答・テンキーエリア -->
-    <div id="answer-area" style="flex-shrink:0; background:white; border-top:2px solid #dcfce7; padding:6px 10px 6px; display:flex; flex-direction:column; gap:6px; position:relative;">
-        <div id="feedback-small" style="position:absolute; top:-24px; left:50%; transform:translateX(-50%); font-size:0.9rem; font-weight:700; color:#3b82f6; white-space:nowrap;"></div>
+    <button id="next-btn" onclick="nextQuestion()">つぎへ ▶</button>
+  </div>
+</div>
 
-        <!-- 入力表示＋確認ボタン行 -->
-        <div style="display:flex; align-items:center; justify-content:center; gap:8px;">
-            <div style="display:flex; align-items:center; gap:4px; background:#f9fafb; border:2px solid #d1d5db; border-radius:10px; padding:4px 10px; min-width:110px; justify-content:flex-end;">
-                <span id="answer-display" style="font-size:1.6rem; font-weight:700; color:#111827; letter-spacing:0.05em; min-width:60px; text-align:right;">0</span>
-                <span style="font-size:1.1rem; font-weight:700; color:#6b7280;">円</span>
-            </div>
-            <button onclick="checkAnswer()" style="white-space:nowrap; background:#a3e635; color:#374151; font-weight:700; padding:9px 16px; border-radius:8px; border:none; box-shadow:0 3px 0 #65a30d; cursor:pointer; font-size:1rem;">たしかめる</button>
-            <button onclick="generateProblem()" style="white-space:nowrap; background:#60a5fa; color:white; font-weight:700; padding:9px 16px; border-radius:8px; border:none; box-shadow:0 3px 0 #1d4ed8; cursor:pointer; font-size:1rem;">つぎのもんだい</button>
-        </div>
+<!-- ===== SETTINGS SCREEN ===== -->
+<div id="settings-screen" class="screen">
+  <div id="settings-title">⚙️ せってい</div>
 
-        <!-- 独自テンキー -->
-        <div id="numpad" style="display:grid; grid-template-columns:repeat(6,1fr); gap:5px; max-width:400px; margin:0 auto; width:100%;">
-            <button class="npbtn" onclick="numpadInput('7')">7</button>
-            <button class="npbtn" onclick="numpadInput('8')">8</button>
-            <button class="npbtn" onclick="numpadInput('9')">9</button>
-            <button class="npbtn" onclick="numpadInput('4')">4</button>
-            <button class="npbtn" onclick="numpadInput('5')">5</button>
-            <button class="npbtn" onclick="numpadInput('6')">6</button>
-            <button class="npbtn" onclick="numpadInput('1')">1</button>
-            <button class="npbtn" onclick="numpadInput('2')">2</button>
-            <button class="npbtn" onclick="numpadInput('3')">3</button>
-            <button class="npbtn" onclick="numpadInput('0')" style="grid-column:span 2;">0</button>
-            <button class="npbtn npbtn-del" onclick="numpadBackspace()">⌫</button>
-        </div>
-    </div>
+  <div class="settings-card">
+    <h3>それぞれ　何枚まで　出すか</h3>
+    <div id="settings-rows"></div>
+  </div>
 
-    <!-- 大正解オーバーレイ（白抜きなし・影だけ） -->
-    <div id="feedback-overlay" style="position:fixed; inset:0; display:flex; justify-content:center; align-items:center; pointer-events:none; z-index:40;">
-        <div id="feedback-text" style="font-size:5rem; font-weight:900; color:#ef4444; opacity:0; filter:drop-shadow(0 3px 6px rgba(0,0,0,0.25));"></div>
-    </div>
+  <button id="back-btn" onclick="closeSettings()">もどる</button>
+</div>
 
-    <button id="settings-trigger" onclick="openSettings()">
-        <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <circle cx="12" cy="12" r="3"></circle>
-            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
-        </svg>
-    </button>
+<!-- Gear button -->
+<button id="gear-btn" onclick="openSettings()" title="せってい">
+  <svg viewBox="0 0 24 24" fill="none" stroke="#666" stroke-width="1.8">
+    <circle cx="12" cy="12" r="3"/>
+    <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+  </svg>
+</button>
 
-    <div id="settings-modal" class="modal-bg">
-        <div class="modal-box">
-            <div style="padding:14px; border-bottom:1px solid #e5e7eb; text-align:center; font-weight:700; font-size:1rem;">設定（出現する枚数の範囲）</div>
-            <div id="settings-list" class="custom-scrollbar" style="padding:12px; overflow-y:auto; flex:1;"></div>
-            <div style="padding:12px; border-top:1px solid #e5e7eb; background:#f9fafb; border-radius:0 0 16px 16px;">
-                <button onclick="saveSettings()" style="width:100%; background:#22c55e; color:white; font-weight:700; padding:12px; border-radius:10px; border:none; box-shadow:0 4px 0 #15803d; cursor:pointer; font-size:1rem;">保存して閉じる</button>
-            </div>
-        </div>
-    </div>
+<!-- Feedback overlay -->
+<div id="feedback">
+  <div id="feedback-circle"></div>
+</div>
 
-    <script>
-        const moneyTypes = [
-            { value: 1000, type: 'bill', class: 'bill-1000' },
-            { value: 500,  type: 'coin', class: 'coin-500' },
-            { value: 100,  type: 'coin', class: 'coin-100' },
-            { value: 50,   type: 'coin', class: 'coin-50' },
-            { value: 10,   type: 'coin', class: 'coin-10' },
-            { value: 5,    type: 'coin', class: 'coin-5' },
-            { value: 1,    type: 'coin', class: 'coin-1' }
-        ];
+<script>
+// ===== CONFIG =====
+const DENOMS = [
+  { val: 1,    label: '1円',    type: 'coin' },
+  { val: 5,    label: '5円',    type: 'coin' },
+  { val: 10,   label: '10円',   type: 'coin' },
+  { val: 50,   label: '50円',   type: 'coin' },
+  { val: 100,  label: '100円',  type: 'coin' },
+  { val: 500,  label: '500円',  type: 'coin' },
+  { val: 1000, label: '1000円', type: 'note' },
+];
 
-        let settings = {
-            1000: { min: 0, max: 0 },
-            500:  { min: 1, max: 3 },
-            100:  { min: 2, max: 5 },
-            50:   { min: 1, max: 3 },
-            10:   { min: 2, max: 5 },
-            5:    { min: 0, max: 0 },
-            1:    { min: 0, max: 0 }
-        };
+// デフォルト設定（最大枚数）
+let maxCounts = { 1:0, 5:0, 10:4, 50:2, 100:3, 500:1, 1000:0 };
 
-        let currentTotal = 0;
-        let currentMoneyElements = [];
-        let displayMode = 'scatter';
+let currentAnswer = '';
+let correctAmount = 0;
+let answered = false;
+let viewMode = 'scattered';
 
-        const container   = document.getElementById('money-container');
-        const displayEl   = document.getElementById('answer-display');
-        const ftEl        = document.getElementById('feedback-text');
-        const fsEl        = document.getElementById('feedback-small');
-        let answerVal = '';  // テンキー入力値（文字列）
+// ===== SVG GENERATORS =====
+function coinSVG(val, size=56) {
+  const configs = {
+    1:    { bg:'#c8a84b', inner:'#d4b455', text:'1', rim:'#a07830', hole:false },
+    5:    { bg:'#c09050', inner:'#d4a560', text:'5', rim:'#906830', hole:true  },
+    10:   { bg:'#c8a84b', inner:'#e0c060', text:'10', rim:'#a07830', hole:false },
+    50:   { bg:'#b0b0b0', inner:'#d0d0d0', text:'50', rim:'#808080', hole:true  },
+    100:  { bg:'#a0a0a0', inner:'#c8c8c8', text:'100', rim:'#707070', hole:false },
+    500:  { bg:'#a0a8b0', inner:'#c0c8d0', text:'500', rim:'#7080a0', hole:false },
+  };
+  const c = configs[val];
+  const r = size/2;
+  const textSize = val>=100 ? size*0.22 : size*0.26;
+  let hole = '';
+  if (c.hole) {
+    hole = `<circle cx="${r}" cy="${r}" r="${size*0.11}" fill="#fdf6e3" stroke="${c.rim}" stroke-width="1"/>`;
+  }
+  return `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" xmlns="http://www.w3.org/2000/svg">
+    <circle cx="${r}" cy="${r}" r="${r-1}" fill="${c.rim}"/>
+    <circle cx="${r}" cy="${r}" r="${r-3}" fill="${c.bg}"/>
+    <circle cx="${r}" cy="${r}" r="${r-5}" fill="${c.inner}" opacity="0.6"/>
+    ${hole}
+    <text x="${r}" y="${r+textSize*0.38}" text-anchor="middle" font-size="${textSize}" font-weight="bold" fill="${c.rim}" font-family="BIZ UDPGothic,sans-serif">${c.text}</text>
+  </svg>`;
+}
 
-        function numpadInput(digit) {
-            if (answerVal.length >= 6) return;
-            answerVal += digit;
-            displayEl.textContent = answerVal || '0';
-        }
-        function numpadBackspace() {
-            answerVal = answerVal.slice(0, -1);
-            displayEl.textContent = answerVal || '0';
-        }
+function noteSVG(val, w=90, h=54) {
+  const configs = {
+    1000: { bg:'#8fbf6a', border:'#5a9040', accent:'#6aaa48', text:'1000' },
+  };
+  const c = configs[val];
+  return `<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" xmlns="http://www.w3.org/2000/svg">
+    <rect x="1" y="1" width="${w-2}" height="${h-2}" rx="5" fill="${c.border}"/>
+    <rect x="3" y="3" width="${w-6}" height="${h-6}" rx="4" fill="${c.bg}"/>
+    <rect x="6" y="6" width="${w-12}" height="${h-12}" rx="3" fill="${c.accent}" opacity="0.35"/>
+    <circle cx="${w*0.5}" cy="${h*0.5}" r="${h*0.28}" fill="${c.border}" opacity="0.18"/>
+    <text x="${w*0.5}" y="${h*0.56}" text-anchor="middle" font-size="${h*0.3}" font-weight="bold" fill="${c.border}" font-family="BIZ UDPGothic,sans-serif">${c.text}</text>
+    <text x="${w*0.5}" y="${h*0.82}" text-anchor="middle" font-size="${h*0.18}" fill="${c.border}" font-family="BIZ UDPGothic,sans-serif">円</text>
+  </svg>`;
+}
 
-        const correctSynth = new Tone.PolySynth(Tone.Synth).toDestination();
-        const wrongSynth   = new Tone.Synth().toDestination();
+// ===== QUESTION GENERATOR =====
+function generateQuestion() {
+  correctAmount = 0;
+  const items = [];
+  for (const d of DENOMS) {
+    const max = maxCounts[d.val] || 0;
+    if (max === 0) continue;
+    const count = Math.floor(Math.random() * (max + 1));
+    for (let i = 0; i < count; i++) {
+      items.push(d);
+      correctAmount += d.val;
+    }
+  }
+  // 0円の場合は最低1枚出す
+  if (items.length === 0) {
+    const avail = DENOMS.filter(d => (maxCounts[d.val]||0) > 0);
+    if (avail.length > 0) {
+      const d = avail[Math.floor(Math.random()*avail.length)];
+      items.push(d);
+      correctAmount += d.val;
+    }
+  }
+  return items;
+}
 
-        function playCorrectSound() {
-            Tone.start();
-            const now = Tone.now();
-            correctSynth.triggerAttackRelease("B5", "16n", now);
-            correctSynth.triggerAttackRelease("E6", "8n", now + 0.15);
-        }
-        function playWrongSound() {
-            Tone.start();
-            const now = Tone.now();
-            wrongSynth.triggerAttackRelease("E4", "8n", now);
-            wrongSynth.frequency.exponentialRampTo("E2", 0.4, now);
-        }
+let currentItems = [];
 
-        function init() {
-            generateSettingsUI();
-            generateProblem();
-            // resizeはウィンドウ向きの変化のみ対応（キーボード出現は無視）
-            window.addEventListener('resize', () => {
-                if (displayMode === 'scatter') {
-                    clearTimeout(window.resizeTimer);
-                    window.resizeTimer = setTimeout(renderMoney, 300);
-                }
-            });
-        }
+function renderCoins(items) {
+  const area = document.getElementById('coins-area');
+  area.innerHTML = '';
 
-        function setDisplayMode(mode) {
-            displayMode = mode;
-            const btnS = document.getElementById('btn-scatter');
-            const btnA = document.getElementById('btn-align');
-            const active   = 'padding:5px 12px; border-radius:6px; font-weight:700; font-size:0.9rem; border:none; cursor:pointer; background:white; color:#16a34a; box-shadow:0 1px 3px rgba(0,0,0,0.1);';
-            const inactive = 'padding:5px 12px; border-radius:6px; font-weight:700; font-size:0.9rem; border:none; cursor:pointer; background:transparent; color:#6b7280;';
-            if (mode === 'scatter') {
-                btnS.style.cssText = active;
-                btnA.style.cssText = inactive;
-                container.classList.remove('mode-align');
-            } else {
-                btnA.style.cssText = active;
-                btnS.style.cssText = inactive;
-                container.classList.add('mode-align');
-            }
-            renderMoney();
-        }
+  if (viewMode === 'scattered') {
+    area.className = 'scattered';
+    const areaW = area.clientWidth || 360;
+    const areaH = area.clientHeight || 220;
+    const placed = [];
 
-        function generateProblem() {
-            currentTotal = 0;
-            currentMoneyElements = [];
+    // shuffle
+    const shuffled = [...items].sort(() => Math.random()-0.5);
 
-            ftEl.innerText = '';
-            ftEl.classList.remove('anim-correct');
-            fsEl.innerText = '';
-            answerVal = '';
-            displayEl.textContent = '0';
+    for (const d of shuffled) {
+      const isNote = d.type === 'note';
+      const w = isNote ? 90 : 56;
+      const h = isNote ? 54 : 56;
 
-            moneyTypes.forEach(mt => {
-                const count = getRandomInt(settings[mt.value].min, settings[mt.value].max);
-                for (let i = 0; i < count; i++) {
-                    currentTotal += mt.value;
-                    const el = document.createElement('div');
-                    el.className = `money ${mt.type} ${mt.class}`;
-                    el.innerText = mt.value;
-                    el.dataset.value = mt.value;
-                    currentMoneyElements.push(el);
-                }
-            });
+      let x, y, tries = 0;
+      do {
+        x = Math.random() * (areaW - w - 8) + 4;
+        y = Math.random() * (areaH - h - 8) + 4;
+        tries++;
+      } while (tries < 60 && placed.some(p => Math.abs(p.x - x) < (w+4) && Math.abs(p.y - y) < (h+4)));
 
-            currentMoneyElements.sort((a, b) => parseInt(b.dataset.value) - parseInt(a.dataset.value));
-            renderMoney();
-        }
+      placed.push({x, y});
 
-        function renderMoney() {
-            container.innerHTML = '';
-            if (currentMoneyElements.length === 0) return;
-            if (displayMode === 'align') {
-                currentMoneyElements.forEach(el => container.appendChild(el));
-            } else {
-                layoutScatter(currentMoneyElements);
-            }
-        }
+      const el = document.createElement('div');
+      el.className = 'coin-item';
+      el.style.left = x + 'px';
+      el.style.top  = y + 'px';
+      el.style.width = w + 'px';
+      el.style.height = h + 'px';
+      el.innerHTML = isNote ? noteSVG(d.val, w, h) : coinSVG(d.val, w);
+      // slight random rotation for scatter feel
+      const rot = (Math.random()-0.5)*28;
+      el.style.transform = `rotate(${rot}deg)`;
+      area.appendChild(el);
+    }
+  } else {
+    // aligned
+    area.className = 'aligned';
+    // group by denom descending
+    const groups = {};
+    for (const d of items) {
+      if (!groups[d.val]) groups[d.val] = { denom: d, count: 0 };
+      groups[d.val].count++;
+    }
+    const sorted = Object.values(groups).sort((a,b) => b.denom.val - a.denom.val);
+    for (const g of sorted) {
+      const row = document.createElement('div');
+      row.className = 'align-row';
+      const lbl = document.createElement('div');
+      lbl.className = 'align-label';
+      lbl.textContent = g.denom.label;
+      row.appendChild(lbl);
+      for (let i = 0; i < g.count; i++) {
+        const el = document.createElement('div');
+        const isNote = g.denom.type === 'note';
+        el.innerHTML = isNote ? noteSVG(g.denom.val, 80, 48) : coinSVG(g.denom.val, 50);
+        row.appendChild(el);
+      }
+      area.appendChild(row);
+    }
+  }
+}
 
-        function layoutScatter(elements) {
-            const rect = container.getBoundingClientRect();
-            if (rect.width === 0 || rect.height === 0) return;
+function newQuestion() {
+  currentAnswer = '';
+  answered = false;
+  document.getElementById('answer-text').textContent = '　';
+  document.getElementById('next-btn').classList.remove('show');
+  currentItems = generateQuestion();
+  renderCoins(currentItems);
+}
 
-            const placedRects = [];
-            const pad = 5;
+function setView(mode) {
+  viewMode = mode;
+  document.getElementById('btn-scatter').classList.toggle('active', mode==='scattered');
+  document.getElementById('btn-align').classList.toggle('active',  mode==='aligned');
+  renderCoins(currentItems);
+}
 
-            elements.forEach(el => {
-                el.style.visibility = 'hidden';
-                el.style.position = 'absolute';
-                container.appendChild(el);
+// ===== NUMPAD =====
+function numInput(d) {
+  if (answered) return;
+  if (currentAnswer.length >= 6) return;
+  currentAnswer += d;
+  document.getElementById('answer-text').textContent = currentAnswer;
+}
+function numDel() {
+  if (answered) return;
+  currentAnswer = currentAnswer.slice(0,-1);
+  document.getElementById('answer-text').textContent = currentAnswer || '　';
+}
 
-                const w = el.offsetWidth;
-                const h = el.offsetHeight;
-                let x = 0, y = 0, overlapping = true, attempts = 0;
+// ===== ANSWER CHECK =====
+function checkAnswer() {
+  if (answered || currentAnswer === '') return;
+  answered = true;
+  const userAmt = parseInt(currentAnswer, 10);
+  if (userAmt === correctAmount) {
+    showFeedback(true);
+    playCorrect();
+    document.getElementById('next-btn').classList.add('show');
+  } else {
+    showFeedback(false);
+    playWrong();
+    // allow retry after animation
+    setTimeout(() => {
+      answered = false;
+      currentAnswer = '';
+      document.getElementById('answer-text').textContent = '　';
+    }, 900);
+  }
+}
 
-                while (overlapping && attempts < 150) {
-                    x = Math.random() * Math.max(0, rect.width  - w - pad * 2) + pad;
-                    y = Math.random() * Math.max(0, rect.height - h - pad * 2) + pad;
-                    const cur = { left: x, right: x + w, top: y, bottom: y + h };
-                    overlapping = placedRects.some(r =>
-                        !(cur.right + pad < r.left || cur.left - pad > r.right ||
-                          cur.bottom + pad < r.top  || cur.top  - pad > r.bottom)
-                    );
-                    attempts++;
-                }
+function nextQuestion() {
+  newQuestion();
+}
 
-                const angle = el.classList.contains('bill')
-                    ? (Math.random() - 0.5) * 30
-                    : Math.random() * 360;
+// ===== FEEDBACK =====
+function showFeedback(correct) {
+  const el = document.getElementById('feedback-circle');
+  el.className = '';
+  el.textContent = correct ? '○' : '✕';
+  void el.offsetWidth; // reflow
+  el.className = correct ? 'correct' : 'wrong';
+  setTimeout(() => { el.className = ''; }, correct ? 1500 : 800);
+}
 
-                el.style.left = `${x}px`;
-                el.style.top  = `${y}px`;
-                el.style.transform = `rotate(${angle}deg)`;
-                el.style.visibility = 'visible';
-                placedRects.push({ left: x, right: x + w, top: y, bottom: y + h });
-            });
-        }
+// ===== AUDIO =====
+const AudioCtx = window.AudioContext || window.webkitAudioContext;
+let audioCtx = null;
+function getACtx() {
+  if (!audioCtx) audioCtx = new AudioCtx();
+  return audioCtx;
+}
 
-        function checkAnswer() {
-            ftEl.classList.remove('anim-correct');
-            void ftEl.offsetWidth;
+function playCorrect() {
+  const ctx = getACtx();
+  const t = ctx.currentTime;
+  // ピンポーン: two tones
+  [[880, t,    0.18, 'sine'],
+   [1100, t+0.22, 0.18, 'sine']].forEach(([freq, start, dur, type]) => {
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = type;
+    osc.frequency.value = freq;
+    gain.gain.setValueAtTime(0.001, start);
+    gain.gain.linearRampToValueAtTime(0.28, start + 0.03);
+    gain.gain.exponentialRampToValueAtTime(0.001, start + dur);
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.start(start);
+    osc.stop(start + dur + 0.05);
+  });
+}
 
-            const userAnswer = parseInt(answerVal, 10);
-            if (!answerVal || isNaN(userAnswer)) {
-                fsEl.innerText = 'すうじをいれてね！';
-                fsEl.style.color = '#f97316';
-                return;
-            }
+function playWrong() {
+  const ctx = getACtx();
+  const t = ctx.currentTime;
+  // キュゥウン: descending sweep
+  const osc = ctx.createOscillator();
+  const gain = ctx.createGain();
+  osc.type = 'sawtooth';
+  osc.frequency.setValueAtTime(500, t);
+  osc.frequency.exponentialRampToValueAtTime(120, t + 0.55);
+  gain.gain.setValueAtTime(0.001, t);
+  gain.gain.linearRampToValueAtTime(0.22, t + 0.05);
+  gain.gain.exponentialRampToValueAtTime(0.001, t + 0.55);
+  osc.connect(gain);
+  gain.connect(ctx.destination);
+  osc.start(t);
+  osc.stop(t + 0.6);
+}
 
-            if (userAnswer === currentTotal) {
-                fsEl.innerText = '';
-                ftEl.innerText = '大正解！🎉';
-                ftEl.style.opacity = '0';
-                ftEl.classList.add('anim-correct');
-                playCorrectSound();
-            } else {
-                fsEl.innerText = 'おしい！もういちどかんがえてみよう！';
-                fsEl.style.color = '#3b82f6';
-                playWrongSound();
-            }
-        }
+// ===== SETTINGS =====
+function openSettings() {
+  buildSettingsUI();
+  document.getElementById('main-screen').classList.remove('active');
+  document.getElementById('settings-screen').classList.add('active');
+}
+function closeSettings() {
+  document.getElementById('settings-screen').classList.remove('active');
+  document.getElementById('main-screen').classList.add('active');
+  newQuestion();
+}
 
-        function getRandomInt(min, max) {
-            return Math.floor(Math.random() * (max - min + 1)) + min;
-        }
+function buildSettingsUI() {
+  const container = document.getElementById('settings-rows');
+  container.innerHTML = '';
+  for (const d of DENOMS) {
+    const row = document.createElement('div');
+    row.className = 'setting-row';
 
-        function generateSettingsUI() {
-            const listEl = document.getElementById('settings-list');
-            listEl.innerHTML = '';
-            moneyTypes.forEach(mt => {
-                const item = document.createElement('div');
-                item.style.cssText = 'display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; background:white; padding:10px 12px; border-radius:10px; border:1px solid #e5e7eb;';
-                const coinW = mt.type === 'bill' ? '80px' : '36px';
-                const coinH = mt.type === 'bill' ? '40px' : '36px';
-                item.innerHTML = `
-                    <div style="display:flex; align-items:center; gap:8px; min-width:80px;">
-                        <div class="money ${mt.type} ${mt.class}" style="position:static; transform:none; box-shadow:none; border-width:1px; width:${coinW}; height:${coinH}; font-size:0.85rem;">${mt.value}</div>
-                    </div>
-                    <div style="display:flex; align-items:center; gap:6px;">
-                        <div style="display:flex; flex-direction:column; align-items:center;">
-                            <label style="font-size:0.7rem; color:#9ca3af; margin-bottom:2px;">最小</label>
-                            <input type="number" id="min-${mt.value}" value="${settings[mt.value].min}" min="0" max="20" inputmode="numeric" style="width:52px; padding:4px; border:1px solid #d1d5db; border-radius:6px; text-align:center; font-size:1rem;">
-                        </div>
-                        <span style="color:#d1d5db;">〜</span>
-                        <div style="display:flex; flex-direction:column; align-items:center;">
-                            <label style="font-size:0.7rem; color:#9ca3af; margin-bottom:2px;">最大</label>
-                            <input type="number" id="max-${mt.value}" value="${settings[mt.value].max}" min="0" max="20" inputmode="numeric" style="width:52px; padding:4px; border:1px solid #d1d5db; border-radius:6px; text-align:center; font-size:1rem;">
-                        </div>
-                        <span style="font-size:0.85rem; color:#6b7280;">枚</span>
-                    </div>`;
-                listEl.appendChild(item);
+    const isNote = d.type === 'note';
+    const thumb = isNote ? noteSVG(d.val, 52, 32) : coinSVG(d.val, 36);
 
-                const minInput = item.querySelector(`#min-${mt.value}`);
-                const maxInput = item.querySelector(`#max-${mt.value}`);
-                minInput.addEventListener('change', () => { if (+minInput.value > +maxInput.value) maxInput.value = minInput.value; });
-                maxInput.addEventListener('change', () => { if (+maxInput.value < +minInput.value) minInput.value = maxInput.value; });
-            });
-        }
+    row.innerHTML = `
+      <div class="setting-label">
+        ${thumb}
+        <span>${d.label}</span>
+      </div>
+      <div class="setting-controls">
+        <button class="step-btn" onclick="changeCount(${d.val}, -1)">－</button>
+        <div class="count-display" id="cnt-${d.val}">${maxCounts[d.val]}</div>
+        <button class="step-btn" onclick="changeCount(${d.val}, +1)">＋</button>
+      </div>`;
+    container.appendChild(row);
+  }
+}
 
-        function openSettings() {
-            generateSettingsUI();
-            document.getElementById('settings-modal').style.display = 'flex';
-        }
+function changeCount(val, delta) {
+  maxCounts[val] = Math.max(0, Math.min(10, (maxCounts[val]||0) + delta));
+  document.getElementById(`cnt-${val}`).textContent = maxCounts[val];
+}
 
-        function saveSettings() {
-            moneyTypes.forEach(mt => {
-                const minVal = parseInt(document.getElementById(`min-${mt.value}`).value, 10) || 0;
-                const maxVal = parseInt(document.getElementById(`max-${mt.value}`).value, 10) || 0;
-                settings[mt.value].min = minVal;
-                settings[mt.value].max = Math.max(minVal, maxVal);
-            });
-            document.getElementById('settings-modal').style.display = 'none';
-            generateProblem();
-        }
-
-        init();
-    </script>
+// ===== INIT =====
+window.addEventListener('load', () => {
+  newQuestion();
+});
+window.addEventListener('resize', () => {
+  if (!answered) renderCoins(currentItems);
+});
+</script>
 </body>
 </html>
