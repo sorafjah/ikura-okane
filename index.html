@@ -45,6 +45,7 @@
     flex-direction: column;
     gap: 6px;
     flex-shrink: 0;
+    margin-left: 4px;
   }
   .toggle-btn {
     padding: 7px 14px; border-radius: 20px;
@@ -106,10 +107,13 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 14px;
+    gap: 6px;
     flex-shrink: 0;
     padding: 2px 4px;
   }
+
+  /* トグルとテンキーの間のスペーサー */
+  #toggle-numpad-gap { width: 20px; flex-shrink: 0; }
 
   /* テンキー */
   #numpad {
@@ -252,6 +256,7 @@
       <button class="toggle-btn active" id="btn-scatter" onclick="setView('scattered')">バラバラ</button>
       <button class="toggle-btn"        id="btn-align"   onclick="setView('aligned')">せいれつ</button>
     </div>
+    <div id="toggle-numpad-gap"></div>
     <div id="numpad">
       <button class="num-btn" onclick="numInput('7')">7</button>
       <button class="num-btn" onclick="numInput('8')">8</button>
@@ -307,17 +312,21 @@ const DENOMS = [
   { val: 50,   label: '50円',   type: 'coin' },
   { val: 100,  label: '100円',  type: 'coin' },
   { val: 500,  label: '500円',  type: 'coin' },
-  { val: 1000, label: '1000円', type: 'note' },
+  { val: 1000,  label: '1000円',  type: 'note' },
+  { val: 5000,  label: '5000円',  type: 'note' },
+  { val: 10000, label: '10000円', type: 'note' },
 ];
 
 let ranges = {
-  1:    { min: 0, max: 0 },
-  5:    { min: 0, max: 0 },
-  10:   { min: 0, max: 4 },
-  50:   { min: 0, max: 2 },
-  100:  { min: 0, max: 3 },
-  500:  { min: 0, max: 1 },
-  1000: { min: 0, max: 0 },
+  1:     { min: 0, max: 0 },
+  5:     { min: 0, max: 0 },
+  10:    { min: 0, max: 4 },
+  50:    { min: 0, max: 2 },
+  100:   { min: 0, max: 3 },
+  500:   { min: 0, max: 1 },
+  1000:  { min: 0, max: 0 },
+  5000:  { min: 0, max: 0 },
+  10000: { min: 0, max: 0 },
 };
 
 let currentAnswer = '';
@@ -373,16 +382,21 @@ function coinSVG(val, size) {
 }
 
 function noteSVG(val, w, h) {
-  const bg = '#e8d9b8'; const border = '#b09060'; const inner = '#f5ead0';
-  const ts = h * 0.36;
+  // 全券種ベージュ系・枠色だけ変えて区別
+  const N = {
+    1000:  { bg:'#ede0c4', border:'#7a5010', inner:'#f8f0dc', text:'1000'  },
+    5000:  { bg:'#e8ddc0', border:'#5a6820', inner:'#f5ecd4', text:'5000'  },
+    10000: { bg:'#e4dccc', border:'#304878', inner:'#f2eadc', text:'10000' },
+  };
+  const c = N[val] || N[1000];
+  const ts = val >= 10000 ? h * 0.28 : h * 0.33;
   return `<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" xmlns="http://www.w3.org/2000/svg">
-  <rect x="1" y="1" width="${w-2}" height="${h-2}" rx="5" fill="${border}"/>
-  <rect x="3" y="3" width="${w-6}" height="${h-6}" rx="4" fill="${bg}"/>
-  <rect x="6" y="6" width="${w-12}" height="${h-12}" rx="3" fill="${inner}" opacity="0.5"/>
-  <circle cx="${w*0.5}" cy="${h*0.5}" r="${h*0.27}" fill="${border}" opacity="0.15"/>
-  <text x="${w*0.5}" y="${h*0.60}" text-anchor="middle"
+  <rect x="1" y="1" width="${w-2}" height="${h-2}" rx="5" fill="${c.border}"/>
+  <rect x="3" y="3" width="${w-6}" height="${h-6}" rx="4" fill="${c.bg}"/>
+  <rect x="6" y="6" width="${w-12}" height="${h-12}" rx="3" fill="${c.inner}" opacity="0.55"/>
+  <text x="${w*0.5}" y="${h*0.62}" text-anchor="middle"
     font-size="${ts}" font-weight="900"
-    fill="${border}" font-family="BIZ UDPGothic,sans-serif">1000</text>
+    fill="${c.border}" font-family="BIZ UDPGothic,sans-serif">${c.text}</text>
 </svg>`;
 }
 
@@ -435,15 +449,21 @@ function renderCoins(items) {
       const isNote = d.type === 'note';
       const w = isNote ? noteW : coinSize;
       const h = isNote ? noteH : coinSize;
-      let x, y, tries = 0;
+      let x, y, tries = 0, best = null, bestOverlap = Infinity;
       do {
         x = Math.random() * (areaW - w - 6) + 3;
         y = Math.random() * (areaH - h - 6) + 3;
+        // 重なり量を計算
+        const overlap = placed.reduce((sum, p) => {
+          const dx = Math.max(0, Math.min(w, p.w) - Math.abs(p.x - x));
+          const dy = Math.max(0, Math.min(h, p.h) - Math.abs(p.y - y));
+          return sum + dx * dy;
+        }, 0);
+        if (overlap < bestOverlap) { bestOverlap = overlap; best = { x, y }; }
         tries++;
-      } while (tries < 100 && placed.some(p =>
-        Math.abs(p.x - x) < w * 0.68 && Math.abs(p.y - y) < h * 0.68
-      ));
-      placed.push({ x, y });
+      } while (tries < 160 && bestOverlap > 0);
+      if (best) { x = best.x; y = best.y; }
+      placed.push({ x, y, w, h });
 
       const el = document.createElement('div');
       el.className = 'coin-item';
