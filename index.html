@@ -102,6 +102,25 @@
     min-width: 38px; text-align: right; flex-shrink: 0;
   }
 
+  /* ============ GEAR ROW（コインエリア直下） ============ */
+  #gear-row {
+    display: flex;
+    justify-content: flex-end;
+    padding: 2px 6px 0;
+    flex-shrink: 0;
+  }
+  #gear-btn {
+    width: 34px; height: 34px;
+    background: none;
+    border: none;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; padding: 0;
+    -webkit-tap-highlight-color: transparent;
+  }
+  #gear-btn:active { opacity: 0.5; }
+  #gear-btn svg { width: 20px; height: 20px; }
+
   /* ============ BOTTOM AREA ============ */
   #bottom-area {
     display: flex;
@@ -166,16 +185,6 @@
     -webkit-tap-highlight-color: transparent;
   }
   #next-btn.show { display: block; }
-
-  /* 歯車 */
-  #gear-btn {
-    position: fixed; bottom: 10px; right: 10px;
-    width: 34px; height: 34px;
-    background: none; border: none; cursor: pointer;
-    opacity: 0.22; padding: 0;
-    -webkit-tap-highlight-color: transparent; z-index: 100;
-  }
-  #gear-btn:hover { opacity: 0.5; }
 
   /* ============ FEEDBACK ============ */
   #feedback {
@@ -242,6 +251,44 @@
     font-size: 16px; font-weight: bold;
     cursor: pointer; font-family: inherit;
   }
+
+  /* ============ INTRO POPUP ============ */
+  #intro-overlay {
+    position: fixed; top: 0; left: 0;
+    width: 100%; height: 100%;
+    background: rgba(61,44,0,0.35);
+    display: flex; align-items: center; justify-content: center;
+    z-index: 300;
+    padding: 16px;
+  }
+  #intro-overlay.hide { display: none; }
+  #intro-card {
+    background: var(--surface);
+    border: 2px solid var(--border);
+    border-radius: 20px;
+    padding: 22px 20px;
+    max-width: 340px;
+    width: 100%;
+    text-align: center;
+  }
+  #intro-card h2 {
+    font-size: 19px; color: var(--text);
+    margin-bottom: 14px;
+  }
+  #intro-card p {
+    font-size: 14px; color: var(--sub);
+    line-height: 1.7;
+    text-align: left;
+    margin-bottom: 18px;
+  }
+  #intro-close {
+    padding: 10px 40px;
+    background: var(--accent); color: white;
+    border: none; border-radius: 22px;
+    font-size: 15px; font-weight: bold;
+    cursor: pointer; font-family: inherit;
+    -webkit-tap-highlight-color: transparent;
+  }
 </style>
 </head>
 <body>
@@ -250,6 +297,15 @@
 <div id="main-screen" class="screen active">
 
   <div id="coins-area" class="scattered"></div>
+
+  <div id="gear-row">
+    <button id="gear-btn" onclick="openSettings()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="#8a6f3a" stroke-width="2" width="20" height="20">
+        <circle cx="12" cy="12" r="3"/>
+        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+      </svg>
+    </button>
+  </div>
 
   <div id="bottom-area">
     <div id="view-toggle">
@@ -291,17 +347,23 @@
   <button id="back-btn" onclick="closeSettings()">もどる</button>
 </div>
 
-<!-- 歯車 -->
-<button id="gear-btn" onclick="openSettings()">
-  <svg viewBox="0 0 24 24" fill="none" stroke="#666" stroke-width="1.8" width="34" height="34">
-    <circle cx="12" cy="12" r="3"/>
-    <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
-  </svg>
-</button>
-
 <!-- フィードバック -->
 <div id="feedback">
   <div id="feedback-maru">〇</div>
+</div>
+
+<!-- 最初の説明ポップアップ -->
+<div id="intro-overlay">
+  <div id="intro-card">
+    <h2>💰 お金はいくら？</h2>
+    <p>
+      うえに ならんでいる コインや おさつを ぜんぶ たすと いくらに なるか かんがえよう。<br><br>
+      すうじボタンで こたえを にゅうりょくして、「こたえる」を おそう。<br><br>
+      「せいれつ」ボタンで コインを きれいに ならべることも できるよ。<br><br>
+      右下の ⚙️（はぐるま）を おすと、コインや おさつの まいすうを かえられる せっていがめんが ひらくよ。
+    </p>
+    <button id="intro-close" onclick="closeIntro()">はじめる</button>
+  </div>
 </div>
 
 <script>
@@ -643,6 +705,11 @@ function changeRange(val, which, delta) {
   }
   document.getElementById(`rmin-${val}`).textContent = r.min;
   document.getElementById(`rmax-${val}`).textContent = r.max;
+}
+
+/* ===== 最初の説明ポップアップ ===== */
+function closeIntro() {
+  document.getElementById('intro-overlay').classList.add('hide');
 }
 
 /* ===== 初期化 ===== */
